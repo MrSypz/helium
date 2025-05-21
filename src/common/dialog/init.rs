@@ -10,14 +10,13 @@ pub fn load_dialogs(
     mut dialog_resource: ResMut<DialogResource>,
     mut vn_state: ResMut<VNState>,
 ) {
-    // โหลด dialog scenes จากไฟล์ JSON
     let intro_scene = dialog("intro.dialog.json").load::<DialogScene>(&asset_server);
-    // let school_scene = dialog("school.dialog.json").load::<DialogScene>(&asset_server);
-    // let choices_scene = dialog("choices.dialog.json").load::<DialogScene>(&asset_server);
+    let school_scene = dialog("school.dialog.json").load::<DialogScene>(&asset_server);
+    let choices_scene = dialog("choices.dialog.json").load::<DialogScene>(&asset_server);
 
     dialog_resource.scenes.insert("intro".to_string(), intro_scene.clone());
-    // dialog_resource.scenes.insert("school".to_string(), school_scene);
-    // dialog_resource.scenes.insert("choices".to_string(), choices_scene.clone());
+    dialog_resource.scenes.insert("school".to_string(), school_scene);
+    dialog_resource.scenes.insert("choices".to_string(), choices_scene.clone());
 
     dialog_resource.current_scene = Some(intro_scene.clone());
     vn_state.current_scene_handle = Some(intro_scene);

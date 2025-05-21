@@ -1,0 +1,105 @@
+{
+  "characters": [
+    {
+      "name": "narrator",
+      "display_name": {
+        "thai": "ผู้เล่าเรื่อง",
+        "english": "Narrator"
+      }
+    },
+    {
+      "name": "player",
+      "display_name": {
+        "thai": "คุณ",
+        "english": "You"
+      }
+    },
+    {
+      "name": "miki",
+      "display_name": {
+        "thai": "มิกิ",
+        "english": "Miki"
+      }
+    },
+    {
+      "name": "teacher",
+      "display_name": {
+        "thai": "อาจารย์ซากุระ",
+        "english": "Ms. Sakura"
+      }
+    }
+  ],
+  "entries": [
+    {
+      "character": "narrator",
+      "text": {
+        "thai": "ในห้องเรียนที่มีแสงอาทิตย์ส่องผ่านหน้าต่าง คุณนั่งอยู่ที่โต๊ะของคุณและมองไปรอบๆ",
+        "english": "In a classroom filled with sunlight streaming through the windows, you sit at your desk and look around."
+      }
+    },
+    {
+      "character": "teacher",
+      "text": {
+        "thai": "ชั้นเรียน วันนี้เรามีนักเรียนใหม่ กรุณาแนะนำตัวให้เพื่อนๆ รู้จักนะคะ",
+        "english": "Class, today we have a new student. Please introduce yourself to everyone."
+      }
+    },
+    {
+      "character": "player",
+      "text": {
+        "thai": "สวัสดีครับ/ค่ะ ฉันชื่อ... ยินดีที่ได้รู้จักทุกคนครับ/ค่ะ",
+        "english": "Hello everyone. My name is... Nice to meet you all."
+      }
+    },
+    {
+      "character": "narrator",
+      "text": {
+        "thai": "ทุกคนในห้องเรียนมองมาที่คุณด้วยความสนใจ บางคนยิ้มให้ บางคนกระซิบกระซาบกัน",
+        "english": "Everyone in the classroom looks at you with interest. Some smile, others whisper among themselves."
+      }
+    },
+    {
+      "character": "teacher",
+      "text": {
+        "thai": "ขอบคุณค่ะ คุณไปนั่งข้างๆ มิกิได้เลย มิกิ ยกมือขึ้นให้หน่อยนะคะ",
+        "english": "Thank you. You can take the seat next to Miki. Miki, please raise your hand."
+      }
+    },
+    {
+      "character": "miki",
+      "text": {
+        "thai": "ที่นี่เลย! ฉันยินดีที่จะแนะนำทุกอย่างในโรงเรียนให้คุณรู้จักเอง!",
+        "english": "Over here! I'll be happy to show you around the school myself!"
+      }
+    },
+    {
+      "character": "narrator",
+      "text": {
+        "thai": "คุณเดินไปนั่งข้างมิกิ เธอยิ้มกว้างและดูเป็นมิตรมาก",
+        "english": "You walk over and sit next to Miki. She has a wide smile and seems very friendly."
+      }
+    },
+    {
+      "character": "miki",
+      "text": {
+        "thai": "เรามีเวลาพักกลางวันด้วยกันหลังจากคาบนี้ ฉันจะพาคุณไปรู้จักกับโรงเรียนนี้ให้มากขึ้น!",
+        "english": "We have lunch break after this class. I'll show you around the school!"
+      }
+    },
+    {
+      "character": "teacher",
+      "text": {
+        "thai": "ตอนนี้เราจะเริ่มบทเรียนกัน ทุกคนเปิดหนังสือหน้า 42 นะคะ",
+        "english": "Now let's start with today's lesson. Everyone, please open your textbooks to page 42."
+      }
+    },
+    {
+      "character": "narrator",
+      "text": {
+        "thai": "ขณะที่ชั่วโมงเรียนดำเนินไป คุณสงสัยว่าจะมีอะไรรออยู่ในช่วงพักกลางวันนี้...",
+        "english": "As the class goes on, you wonder what awaits you during the lunch break..."
+      },
+      "actions": ["change_scene:choices"]
+    }
+  ]
+}

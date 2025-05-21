@@ -23,14 +23,19 @@ impl Plugin for VNPlugin {
                 setup_ui,
                 load_dialogs,
             ))
-            // จัดลำดับการทำงานของระบบให้เหมาะสม
+            // จัดกลุ่มและลำดับการทำงานของระบบให้เหมาะสม
             .add_systems(Update, (
+                // ระบบ dialog
                 update_dialog,
                 typewriter_system,
-                display_choices.after(update_dialog),
-                handle_choice_click.after(display_choices),
-                highlight_choice_button.after(display_choices),
                 text_click.after(display_choices),
+
+                // ระบบ choice
+                display_choices.after(update_dialog),
+                highlight_choice_button.after(display_choices),
+                handle_choice_click.after(display_choices),
+
+                // ระบบอื่นๆ
                 toggle_language,
                 handle_back_button,
                 debug_choice_system,
