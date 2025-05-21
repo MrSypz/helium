@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::common::dialog::choice::ChoiceState;
 use crate::common::helium::{VNState, DialogResource, DialogHistory};
-use crate::common::dialog::textwriter::TypewriterText;
+use crate::common::dialog::typewriter::TypewriterText;
 use crate::common::dialog::types::DialogScene;
 
 /// ระบบสำหรับ setup UI

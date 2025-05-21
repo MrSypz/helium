@@ -1,4 +1,4 @@
 pub mod types;
-pub mod textwriter;
+pub mod typewriter;
 pub mod choice;
 pub mod init;
