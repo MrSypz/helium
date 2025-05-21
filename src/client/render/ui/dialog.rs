@@ -2,6 +2,7 @@ use crate::common::dialog::choice::ChoiceState;
 use crate::common::dialog::types::DialogScene;
 use crate::common::dialog::typewriter::TypewriterText;
 use crate::common::helium::{DialogHistory, DialogResource, VNState};
+use crate::common::util::input_handler;
 use bevy::prelude::*;
 
 // UI component tags - make them public
@@ -26,6 +27,22 @@ const TEXT_COLOR: Color = Color::WHITE;
 const NAME_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 const DIALOG_BG_COLOR: Color = Color::srgba(0.05, 0.05, 0.1, 0.85);
 const DIALOG_BORDER_COLOR: Color = Color::srgba(0.3, 0.3, 0.5, 0.5);
+/// ระบบสำหรับ setup UI แบบ modern
+#[derive(Component)]
+pub struct DialogVisibility {
+    pub should_show: bool,
+    pub changed: bool,
+}
+
+impl Default for DialogVisibility {
+    fn default() -> Self {
+        DialogVisibility {
+            should_show: false,
+            changed: false,
+        }
+    }
+}
+
 /// ระบบสำหรับ setup UI แบบ modern
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: Res<VNState>) {
     // โหลด font
@@ -57,6 +74,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
             },
             DialogBox,
             Name::new("dialog_box"),
+            DialogVisibility::default(),
         ))
         .with_children(|parent| {
             // ชื่อตัวละคร - อยู่ในกล่องเล็กๆ ด้านบน
@@ -113,21 +131,20 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
             ));
 
             // ตัวควบคุมด้านล่าง - แสดงแถบสถานะและปุ่ม
-            parent
-                .spawn((
-                    NodeBundle {
-                        style: Style {
-                            width: Val::Percent(100.0),
-                            height: Val::Px(40.0),
-                            margin: UiRect::top(Val::Px(10.0)),
-                            justify_content: JustifyContent::SpaceBetween,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
+            parent.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(40.0),
+                        margin: UiRect::top(Val::Px(10.0)),
+                        justify_content: JustifyContent::SpaceBetween,
+                        align_items: AlignItems::Center,
                         ..default()
                     },
-                    DialogControls,
-                ));
+                    ..default()
+                },
+                DialogControls,
+            ));
         });
 }
 
@@ -221,18 +238,14 @@ pub fn text_click(
     }
 
     // ตรวจสอบการคลิกหรือแตะ
-    let interaction_triggered = mouse.just_pressed(MouseButton::Left) ||
-        touch.iter_just_pressed().next().is_some() ||
-        dialog_box_query.iter().any(|&interaction| interaction == Interaction::Pressed);
-
-    if interaction_triggered {
+    if let Some(_) = input_handler::detect_interaction(&mouse, &touch, &dialog_box_query) {
         if let Some(scene_handle) = &dialog_resource.current_scene {
             if let Some(scene) = dialog_scenes.get(scene_handle) {
                 // ตรวจสอบว่าข้อความปัจจุบันพิมพ์จบแล้วหรือไม่
                 let is_finished = {
                     let dialog_query = query_set.p1();
                     if let Ok((_, typewriter)) = dialog_query.get_single() {
-                        typewriter.char_index >= typewriter.full_text.chars().count()
+                        input_handler::is_dialog_text_finished(typewriter)
                     } else {
                         false
                     }
@@ -295,10 +308,12 @@ pub fn text_click(
 }
 
 // Helper function เพื่อรีเซ็ตข้อความเมื่อเปลี่ยน stage หรือ scene
-fn reset_dialog_text(query_set: &mut ParamSet<(
-    Query<&mut Text, (With<CharacterName>, Without<TypewriterText>)>,
-    Query<(&mut Text, &mut TypewriterText), With<DialogText>>,
-)>) {
+fn reset_dialog_text(
+    query_set: &mut ParamSet<(
+        Query<&mut Text, (With<CharacterName>, Without<TypewriterText>)>,
+        Query<(&mut Text, &mut TypewriterText), With<DialogText>>,
+    )>,
+) {
     {
         let mut character_query = query_set.p0();
         for mut text in &mut character_query.iter_mut() {
@@ -324,16 +339,10 @@ pub fn toggle_language(
         Query<&mut Text, With<LanguageIndicator>>,
     )>,
 ) {
-    // กด L เพื่อสลับภาษา
-    if keyboard.just_pressed(KeyCode::KeyL) {
-        state.language = if state.language == "thai" {
-            "english".to_string()
-        } else {
-            "thai".to_string()
-        };
+    if let Some(_) = input_handler::detect_key_press(&keyboard, &[KeyCode::KeyL]) {
+        let language_changed = input_handler::switch_language(&mut state);
 
-        // อัพเดทตัวแสดงภาษา
-        {
+        if language_changed {
             let mut language_query = query_set.p2();
             if let Ok(mut lang_text) = language_query.get_single_mut() {
                 lang_text.sections[0].value = if state.language == "thai" {
@@ -344,7 +353,6 @@ pub fn toggle_language(
             }
         }
 
-        // รีเซ็ตข้อความเพื่อให้มีการอัพเดทในภาษาใหม่
         {
             let mut character_query = query_set.p0();
             for mut text in &mut character_query.iter_mut() {

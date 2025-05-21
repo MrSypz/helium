@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use crate::common::helium::{VNState, DialogHistory};
 use crate::common::dialog::types::DialogChoice;
-use crate::client::render::ui::choice::ChoiceContainer;
+use crate::client::render::ui::choice::{ChoiceContainer, ChoiceOverlay};
+use crate::common::util::input_handler::InputSource;
 
 /// Component สำหรับปุ่มตัวเลือก
 #[derive(Component)]
@@ -31,7 +32,37 @@ impl ChoiceState {
         self.history.clear();
     }
 }
+fn process_choice_selection(
+    commands: &mut Commands,
+    state: &mut VNState,
+    choice_state: &mut ChoiceState,
+    history: &mut DialogHistory,
+    container_query: &Query<Entity, With<ChoiceContainer>>,
+    overlay_query: &Query<Entity, With<ChoiceOverlay>>,
+    choice_index: usize,
+    target_stage: usize,
+) {
+    info!("เลือกตัวเลือกที่ {} ไปยัง stage {}", choice_index, target_stage);
 
+    // เก็บประวัติการเลือก
+    choice_state.add_choice(choice_index);
+    history.add_choice(state.stage, choice_index, target_stage);
+
+    // เปลี่ยน stage ไปตาม target
+    state.stage = target_stage;
+
+    // ลบตัวเลือกทั้งหมด
+    for entity in container_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+
+    // ลบ overlay ด้วย
+    for entity in overlay_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+
+    choice_state.active = false;
+}
 /// ระบบจัดการการกดปุ่มตัวเลือก - แบบ modern
 pub fn handle_choice_click(
     mut commands: Commands,
@@ -40,6 +71,7 @@ pub fn handle_choice_click(
     mut history: ResMut<DialogHistory>,
     choice_query: Query<(&ChoiceButton, &Interaction), Changed<Interaction>>,
     container_query: Query<Entity, With<ChoiceContainer>>,
+    overlay_query: Query<Entity, With<ChoiceOverlay>>, // Add this
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     if !choice_state.active {
@@ -60,7 +92,8 @@ pub fn handle_choice_click(
 
             // Process the selection
             process_choice_selection(&mut commands, &mut state, &mut choice_state,
-                                     &mut history, &container_query, i, target_stage);
+                                     &mut history, &container_query, &overlay_query,
+                                     i, target_stage);
             return;
         }
     }
@@ -69,71 +102,13 @@ pub fn handle_choice_click(
     for (choice, interaction) in choice_query.iter() {
         if *interaction == Interaction::Pressed {
             process_choice_selection(&mut commands, &mut state, &mut choice_state,
-                                     &mut history, &container_query,
+                                     &mut history, &container_query, &overlay_query,
                                      choice.choice_index, choice.target_stage);
             return;
         }
     }
 }
 
-// Helper function เพื่อจัดการการเลือกตัวเลือก
-fn process_choice_selection(
-    commands: &mut Commands,
-    state: &mut VNState,
-    choice_state: &mut ChoiceState,
-    history: &mut DialogHistory,
-    container_query: &Query<Entity, With<ChoiceContainer>>,
-    choice_index: usize,
-    target_stage: usize,
-) {
-    info!("เลือกตัวเลือกที่ {} ไปยัง stage {}", choice_index, target_stage);
-
-    // เก็บประวัติการเลือก
-    choice_state.add_choice(choice_index);
-    history.add_choice(state.stage, choice_index, target_stage);
-
-    // เปลี่ยน stage ไปตาม target
-    state.stage = target_stage;
-
-    // ลบตัวเลือกทั้งหมด
-    for entity in container_query.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-
-    choice_state.active = false;
-}
-
-/// ระบบย้อนกลับไปการเลือกก่อนหน้า - แบบ modern
-pub fn handle_back_button(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut state: ResMut<VNState>,
-    mut history: ResMut<DialogHistory>,
-    mut choice_state: ResMut<ChoiceState>,
-    query: Query<Entity, With<ChoiceContainer>>,
-    mut commands: Commands,
-) {
-    // กดปุ่ม B, Backspace หรือ Escape เพื่อย้อนกลับ
-    let back_pressed = keyboard.just_pressed(KeyCode::KeyB) ||
-        keyboard.just_pressed(KeyCode::Backspace) ||
-        keyboard.just_pressed(KeyCode::Escape);
-
-    if back_pressed {
-        if let Some(previous) = history.go_back() {
-            info!("ย้อนกลับไปยัง stage: {}", previous);
-
-            // ลบตัวเลือกปัจจุบันถ้ามี
-            for entity in query.iter() {
-                commands.entity(entity).despawn_recursive();
-            }
-
-            // กลับไปที่ stage ก่อนหน้า
-            state.stage = previous;
-            choice_state.active = false;
-        }
-    }
-}
-
-/// Renamed from choice_system to match what's in plugin.rs
 pub fn debug_choice_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     choice_state: Res<ChoiceState>,
