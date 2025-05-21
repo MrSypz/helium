@@ -20,22 +20,19 @@ pub struct DialogControls;
 #[derive(Component)]
 pub struct LanguageIndicator;
 
-// Constants for UI - ปรับปรุงสีและขนาดให้สวยงามขึ้น
+// Constants for UI
 const DIALOG_Z_LAYER: f32 = 10.0;
 const TEXT_COLOR: Color = Color::WHITE;
 const NAME_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 const DIALOG_BG_COLOR: Color = Color::srgba(0.05, 0.05, 0.1, 0.85);
 const DIALOG_BORDER_COLOR: Color = Color::srgba(0.3, 0.3, 0.5, 0.5);
-const DIALOG_SHADOW_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.4);
-const NAME_BG_COLOR: Color = Color::srgba(0.1, 0.1, 0.2, 0.9);
-
-/// ระบบสำหรับ setup UI แบบ modern และมีความโค้งมน
+/// ระบบสำหรับ setup UI แบบ modern
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: Res<VNState>) {
     // โหลด font
     let regular_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
     let bold_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
 
-    // กล่องข้อความหลัก - แบบ enhanced modern UI
+    // กล่องข้อความหลัก - ใช้ flexbox layout สำหรับความ responsive
     commands
         .spawn((
             NodeBundle {
@@ -46,7 +43,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
                     max_height: Val::Percent(40.0),
                     position_type: PositionType::Absolute,
                     bottom: Val::Px(0.0),
-                    padding: UiRect::all(Val::Px(25.0)), // เพิ่ม padding ให้มากขึ้น
+                    padding: UiRect::all(Val::Px(20.0)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::FlexStart,
                     align_items: AlignItems::FlexStart,
@@ -54,7 +51,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
                 },
                 background_color: DIALOG_BG_COLOR.into(),
                 border_color: DIALOG_BORDER_COLOR.into(),
-                border_radius: BorderRadius::all(Val::Px(25.0)), // เพิ่มความโค้งมนให้มากขึ้น
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 z_index: ZIndex::Global(DIALOG_Z_LAYER as i32),
                 ..default()
             },
@@ -62,23 +59,23 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
             Name::new("dialog_box"),
         ))
         .with_children(|parent| {
-            // ชื่อตัวละคร - ออกแบบใหม่ให้โค้งมนและสวยงามขึ้น
+            // ชื่อตัวละคร - อยู่ในกล่องเล็กๆ ด้านบน
             parent
                 .spawn((NodeBundle {
                     style: Style {
                         position_type: PositionType::Relative,
-                        margin: UiRect::bottom(Val::Px(15.0)),
-                        padding: UiRect {
-                            left: Val::Px(20.0),
-                            right: Val::Px(20.0),
-                            top: Val::Px(8.0),
-                            bottom: Val::Px(8.0),
-                        },
+                        margin: UiRect::bottom(Val::Px(10.0)),
+                        padding: UiRect::new(
+                            Val::Px(15.0),
+                            Val::Px(15.0),
+                            Val::Px(5.0),
+                            Val::Px(5.0),
+                        ),
                         ..default()
                     },
-                    background_color: NAME_BG_COLOR.into(),
+                    background_color: Color::srgba(0.1, 0.1, 0.2, 0.9).into(),
                     border_color: NAME_COLOR.with_alpha(0.7).into(),
-                    border_radius: BorderRadius::all(Val::Px(15.0)), // เพิ่มความโค้งมน
+                    border_radius: BorderRadius::all(Val::Px(10.0)),
                     ..default()
                 },))
                 .with_children(|name_box| {
@@ -96,7 +93,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
                     ));
                 });
 
-            // ข้อความบทสนทนา - เพิ่ม line height และระยะห่าง
+            // ข้อความบทสนทนา
             parent.spawn((
                 TextBundle::from_section(
                     "",
@@ -106,29 +103,23 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
                         color: TEXT_COLOR,
                     },
                 )
-                    .with_style(Style {
-                        margin: UiRect {
-                            left: Val::Px(10.0),
-                            right: Val::Px(10.0),
-                            top: Val::Px(15.0),
-                            bottom: Val::Px(15.0),
-                        },
-                        max_width: Val::Percent(95.0), // ให้ข้อความไม่กินพื้นที่ทั้งหมด
-                        ..default()
-                    }),
+                .with_style(Style {
+                    margin: UiRect::all(Val::Px(10.0)),
+                    ..default()
+                }),
                 DialogText,
                 Name::new("dialogue"),
                 TypewriterText::new("", 0.05),
             ));
 
-            // ตัวควบคุมด้านล่าง - ปรับปรุงตำแหน่งและ layout
+            // ตัวควบคุมด้านล่าง - แสดงแถบสถานะและปุ่ม
             parent
                 .spawn((
                     NodeBundle {
                         style: Style {
                             width: Val::Percent(100.0),
                             height: Val::Px(40.0),
-                            margin: UiRect::top(Val::Px(15.0)),
+                            margin: UiRect::top(Val::Px(10.0)),
                             justify_content: JustifyContent::SpaceBetween,
                             align_items: AlignItems::Center,
                             ..default()
@@ -136,26 +127,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, _state: 
                         ..default()
                     },
                     DialogControls,
-                ))
-                .with_children(|controls| {
-                    // เพิ่มคำแนะนำการกดเพื่อดำเนินเรื่องต่อ
-                    controls.spawn(
-                        TextBundle::from_section(
-                            "คลิกเพื่อดำเนินเรื่องต่อ",
-                            TextStyle {
-                                font: regular_font.clone(),
-                                font_size: 18.0,
-                                color: Color::srgba(0.7, 0.7, 0.8, 0.7),
-                            },
-                        )
-                            .with_style(Style {
-                                position_type: PositionType::Absolute,
-                                right: Val::Px(20.0),
-                                bottom: Val::Px(5.0),
-                                ..default()
-                            })
-                    );
-                });
+                ));
         });
 }
 
@@ -174,9 +146,9 @@ pub fn update_dialog(
         let mut language_query = query_set.p2();
         if let Ok(mut lang_text) = language_query.get_single_mut() {
             lang_text.sections[0].value = if state.language == "thai" {
-                "TH".to_string()
+                "TH".parse().unwrap()
             } else {
-                "EN".to_string()
+                "EN".parse().unwrap()
             };
         }
     }
@@ -365,9 +337,9 @@ pub fn toggle_language(
             let mut language_query = query_set.p2();
             if let Ok(mut lang_text) = language_query.get_single_mut() {
                 lang_text.sections[0].value = if state.language == "thai" {
-                    "TH".to_string()
+                    "TH".parse().unwrap()
                 } else {
-                    "EN".to_string()
+                    "EN".parse().unwrap()
                 };
             }
         }
