@@ -2,8 +2,9 @@ use bevy::prelude::*;
 use crate::common::helium::{VNState, DialogResource, DialogHistory};
 use crate::common::dialog::types::DialogScene;
 use crate::common::dialog::textwriter::typewriter_system;
-use crate::common::dialog::choice::{ChoiceState, display_choices, handle_choice_click, handle_back_button, highlight_choice_button, debug_choice_system};
+use crate::common::dialog::choice::{ChoiceState, handle_choice_click, handle_back_button, debug_choice_system};
 use crate::client::render::ui::dialog::{setup_ui, update_dialog, text_click, toggle_language};
+use crate::client::render::ui::choice::{display_choices, highlight_choice_button};
 use crate::client::render::setup::setup_scene;
 use crate::common::dialog::init::load_dialogs;
 
