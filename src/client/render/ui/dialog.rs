@@ -2,7 +2,7 @@ use crate::common::dialog::choice::ChoiceState;
 use crate::common::dialog::types::DialogScene;
 use crate::common::dialog::typewriter::TypewriterText;
 use crate::common::helium::{DialogHistory, DialogResource, VNState};
-use crate::common::util::input_handler;
+use crate::util::input_handler;
 use bevy::prelude::*;
 
 // UI component tags - make them public

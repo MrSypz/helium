@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::common::helium::{DialogResource, VNState};
-use crate::common::util::identifier::dialog;
+use crate::util::identifier::dialog;
 use crate::common::dialog::types::DialogScene;
 
 /// โหลด dialog scenes ทั้งหมดในเกม

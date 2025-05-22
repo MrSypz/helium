@@ -1,7 +1,7 @@
 // src/client/render/character.rs
 use crate::common::dialog::types::DialogScene;
 use crate::common::helium::VNState;
-use crate::common::util::identifier::texture;
+use crate::util::identifier::texture;
 use bevy::prelude::*;
 
 /// คอมโพเนนต์สำหรับตัวละคร

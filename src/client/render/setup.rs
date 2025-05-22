@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::common::util::identifier::texture;
+use crate::util::identifier::texture;
 use crate::common::helium::VNState;
 use crate::common::dialog::types::DialogScene;
 
