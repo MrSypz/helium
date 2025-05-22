@@ -7,7 +7,7 @@ use crate::common::dialog::choice::{ChoiceState, handle_choice_click, debug_choi
 use crate::client::render::ui::dialog::{setup_ui, update_dialog, text_click, toggle_language};
 use crate::client::render::ui::choice::{display_choices, highlight_choice_button, cleanup_overlay_on_choice_change};
 use crate::client::render::setup::{setup_scene, update_background};
-use crate::client::render::character::{setup_characters, update_characters};
+use crate::client::render::character::{setup_characters, update_characters, check_character_assets, debug_characters};
 use crate::client::render::transition::{ActiveTransition, start_transition, update_transition};
 use crate::common::dialog::init::load_dialogs;
 
@@ -25,18 +25,21 @@ impl Plugin for VNPlugin {
             .add_systems(Startup, (
                 setup_scene,
                 setup_ui,
-                setup_characters,
                 load_dialogs,
             ))
             // จัดกลุ่มและลำดับการทำงานของระบบให้เหมาะสม
             .add_systems(Update, (
+                // ระบบโหลด assets และ setup ตัวละคร - ต้องทำก่อน
+                setup_characters,
+                check_character_assets,
+
                 // ระบบ dialog
                 update_dialog,
                 typewriter_system,
                 text_click.after(display_choices),
 
-                // ระบบตัวละคร
-                update_characters.after(update_dialog),
+                // ระบบตัวละคร - ต้องทำหลังจาก setup_characters
+                update_characters.after(setup_characters),
 
                 // ระบบพื้นหลัง
                 update_background.after(update_dialog),
@@ -54,6 +57,7 @@ impl Plugin for VNPlugin {
                 // ระบบอื่นๆ
                 toggle_language,
                 debug_choice_system,
+                debug_characters, // เพิ่มระบบ debug
             ));
     }
 }

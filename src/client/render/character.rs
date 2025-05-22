@@ -1,3 +1,4 @@
+// src/client/render/character.rs
 use crate::common::dialog::types::DialogScene;
 use crate::common::helium::VNState;
 use crate::common::util::identifier::texture;
@@ -7,6 +8,7 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct CharacterSprite {
     pub name: String,
+    pub loaded: bool, // เพิ่มการติดตามว่าโหลดแล้วหรือไม่
 }
 
 /// คอมโพเนนต์สำหรับการเปลี่ยน expression
@@ -26,22 +28,33 @@ const DIMMED_SCALE: Vec3 = Vec3::new(0.8, 0.8, 0.8);
 const HIGHLIGHT_COLOR: Color = Color::WHITE;
 const DIMMED_COLOR: Color = Color::srgba(0.6, 0.6, 0.6, 0.8);
 
-/// ระบบสำหรับการแสดงตัวละครเริ่มต้น
+/// ระบบสำหรับการตรวจสอบและโหลดตัวละคร - ทำงานใน Update แทน Startup
 pub fn setup_characters(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     dialog_scenes: Res<Assets<DialogScene>>,
     state: Res<VNState>,
+    character_query: Query<&CharacterSprite>,
 ) {
+    // ตรวจสอบว่ามีตัวละครถูกสร้างแล้วหรือไม่
+    if !character_query.is_empty() {
+        return;
+    }
+
     if let Some(scene_handle) = &state.current_scene_handle {
         if let Some(scene) = dialog_scenes.get(scene_handle) {
+            info!("กำลังสร้างตัวละคร {} ตัว", scene.characters.len());
+
             // เพิ่มสไปรต์สำหรับแต่ละตัวละครในฉาก
             for character in &scene.characters {
                 if !character.sprite.is_empty() {
+                    info!("สร้างตัวละคร: {} จากไฟล์: {}", character.name, character.sprite);
+
+                    // ใช้ default texture ก่อน แล้วค่อยเปลี่ยนเมื่อโหลดเสร็จ
                     let sprite_handle = texture(&character.sprite).load::<Image>(&asset_server);
 
-                    // สร้างเอนทิตี้ตัวละคร แต่ให้อยู่นอกจอก่อน
-                    commands.spawn((
+                    // สร้างเอนทิตี้ตัวละคร
+                    let entity = commands.spawn((
                         SpriteBundle {
                             texture: sprite_handle,
                             transform: Transform {
@@ -58,12 +71,45 @@ pub fn setup_characters(
                         },
                         CharacterSprite {
                             name: character.name.clone(),
+                            loaded: false,
                         },
                         ExpressionState {
                             current: "default".to_string(),
                         },
                         Name::new(format!("character_{}", character.name)),
-                    ));
+                    )).id();
+
+                    info!("สร้างตัวละคร entity: {:?} สำหรับ {}", entity, character.name);
+                } else {
+                    info!("ตัวละคร {} ไม่มี sprite", character.name);
+                }
+            }
+        } else {
+            warn!("ไม่พบ dialog scene ใน assets");
+        }
+    } else {
+        warn!("ไม่มี current_scene_handle");
+    }
+}
+
+/// ระบบตรวจสอบว่า assets โหลดเสร็จแล้วหรือไม่
+pub fn check_character_assets(
+    asset_server: Res<AssetServer>,
+    mut character_query: Query<(&mut CharacterSprite, &Handle<Image>)>,
+) {
+    for (mut character, texture_handle) in character_query.iter_mut() {
+        if !character.loaded {
+            match asset_server.load_state(texture_handle.id()) {
+                bevy::asset::LoadState::Loaded => {
+                    character.loaded = true;
+                    info!("ตัวละคร {} โหลดเสร็จแล้ว", character.name);
+                },
+                bevy::asset::LoadState::Failed(e) => {
+                    warn!("ไม่สามารถโหลดตัวละคร {} ได้ เพราะ {}", character.name, e);
+                    character.loaded = true; // ทำเครื่องหมายว่าพยายามโหลดแล้ว
+                },
+                _ => {
+                    // ยังโหลดไม่เสร็จ
                 }
             }
         }
@@ -77,7 +123,10 @@ fn position_from_string(position: &str) -> Vec3 {
         "center" => POSITION_CENTER,
         "right" => POSITION_RIGHT,
         "offscreen" => POSITION_OFFSCREEN,
-        _ => POSITION_CENTER,
+        _ => {
+            warn!("ตำแหน่งไม่รู้จัก: {}, ใช้ center แทน", position);
+            POSITION_CENTER
+        }
     }
 }
 
@@ -99,22 +148,29 @@ pub fn update_characters(
                 let entry = &scene.entries[state.stage];
                 let speaking_character = &entry.character;
 
-                // อัพเดทสถานะตัวละครตามที่กำหนดในเอนทรี่
+                info!("อัพเดทตัวละคร stage: {}, character_states: {}", 
+                      state.stage, entry.character_states.len());
+
+                // เริ่มต้นให้ซ่อนตัวละครทั้งหมด
                 for (mut transform, mut sprite, mut visibility, character) in
                     character_query.iter_mut()
                 {
-                    // เริ่มต้นให้ซ่อนตัวละครทั้งหมด
-                    *visibility = Visibility::Hidden;
+                    // เริ่มต้นซ่อนทุกตัว
+                    let mut should_show = false;
 
                     // ตรวจสอบว่าตัวละครนี้มีอยู่ในเอนทรี่ปัจจุบันหรือไม่
                     for char_state in &entry.character_states {
                         if char_state.name == character.name {
+                            should_show = true;
+
+                            info!("แสดงตัวละคร: {} ที่ตำแหน่ง: {}", 
+                                  character.name, char_state.position);
+
                             // แสดงตัวละคร
                             *visibility = Visibility::Visible;
 
                             // ตั้งค่าตำแหน่ง
                             let target_pos = position_from_string(&char_state.position);
-                            // ใช้ lerp manual สำหรับ transform
                             let t = time.delta_seconds() * 5.0;
                             transform.translation.x += (target_pos.x - transform.translation.x) * t;
                             transform.translation.z += (target_pos.z - transform.translation.z) * t;
@@ -123,15 +179,12 @@ pub fn update_characters(
                             let is_speaking = character.name == *speaking_character;
                             let should_highlight = char_state.highlight || is_speaking;
 
-                            // อีกแนวทางหนึ่ง: สร้าง Color ใหม่สำหรับการเปลี่ยนแปลงทีละน้อย
                             if should_highlight {
-                                // ใช้ lerp manual สำหรับ scale
                                 let t = time.delta_seconds() * 8.0;
                                 transform.scale.x += (HIGHLIGHT_SCALE.x - transform.scale.x) * t;
                                 transform.scale.y += (HIGHLIGHT_SCALE.y - transform.scale.y) * t;
                                 transform.scale.z += (HIGHLIGHT_SCALE.z - transform.scale.z) * t;
 
-                                // สร้าง Color ใหม่จากค่าปัจจุบันและเป้าหมาย
                                 let current = sprite.color.to_srgba();
                                 let target = HIGHLIGHT_COLOR.to_srgba();
 
@@ -142,11 +195,9 @@ pub fn update_characters(
 
                                 sprite.color = Color::srgba(new_r, new_g, new_b, new_a);
 
-                                // ยกตัวละครขึ้นเล็กน้อยเมื่อพูด
                                 let target_y = target_pos.y + 20.0;
                                 transform.translation.y += (target_y - transform.translation.y) * t;
                             } else {
-                                // ทำแบบเดียวกันสำหรับสถานะที่ไม่ได้ highlight
                                 let t = time.delta_seconds() * 8.0;
                                 transform.scale.x += (DIMMED_SCALE.x - transform.scale.x) * t;
                                 transform.scale.y += (DIMMED_SCALE.y - transform.scale.y) * t;
@@ -162,14 +213,40 @@ pub fn update_characters(
 
                                 sprite.color = Color::srgba(new_r, new_g, new_b, new_a);
 
-                                transform.translation.y +=
-                                    (target_pos.y - transform.translation.y) * t;
+                                transform.translation.y += (target_pos.y - transform.translation.y) * t;
                             }
                             break;
                         }
                     }
+
+                    // ถ้าไม่ควรแสดง ให้ซ่อน
+                    if !should_show {
+                        *visibility = Visibility::Hidden;
+                    }
                 }
+            } else {
+                warn!("Stage {} เกินจำนวน entries ({}) ที่มี", state.stage, scene.entries.len());
             }
+        } else {
+            warn!("ไม่พบ dialog scene ใน update_characters");
+        }
+    }
+}
+
+/// ระบบสำหรับ debug ตัวละคร
+pub fn debug_characters(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    character_query: Query<&CharacterSprite>,
+    state: Res<VNState>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyC) {
+        info!("=== Character Debug ===");
+        info!("จำนวนตัวละครที่สร้างแล้ว: {}", character_query.iter().count());
+        info!("Stage ปัจจุบัน: {}", state.stage);
+        info!("Scene ปัจจุบัน: {}", state.current_scene);
+
+        for character in character_query.iter() {
+            info!("ตัวละคร: {} (โหลดแล้ว: {})", character.name, character.loaded);
         }
     }
 }
