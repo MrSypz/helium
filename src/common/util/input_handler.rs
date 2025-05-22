@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use crate::common::helium::{VNState, DialogHistory};
-use crate::common::dialog::choice::{ChoiceState, ChoiceButton};
 use crate::common::dialog::typewriter::TypewriterText;
-use crate::client::render::ui::choice::ChoiceContainer;
 use crate::client::render::ui::dialog::DialogBox;
 
 /// Centralized input handler for dialog interactions

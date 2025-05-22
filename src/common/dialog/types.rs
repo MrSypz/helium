@@ -1,3 +1,4 @@
+// src/common/dialog/types.rs
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::asset::{AssetLoader, LoadContext, AsyncReadExt};
@@ -11,6 +12,10 @@ use std::future::Future;
 pub struct DialogCharacter {
     pub name: String,
     pub display_name: HashMap<String, String>,
+    #[serde(default)]
+    pub sprite: String, // เพิ่มพาธไปยังไฟล์สไปรต์
+    #[serde(default)]
+    pub positions: HashMap<String, Vec2>, // ตำแหน่งทางเลือกของตัวละคร
 }
 
 /// ตัวเลือกใน dialog
@@ -20,6 +25,22 @@ pub struct DialogChoice {
     pub target_stage: usize,
     #[serde(default)]
     pub conditions: Vec<String>,
+}
+
+/// สถานะของตัวละครใน entry
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct CharacterState {
+    pub name: String,
+    pub position: String, // ตำแหน่งที่กำหนดไว้ล่วงหน้า (left, right, center)
+    pub expression: String, // สีหน้า/ท่าทาง
+    pub highlight: bool, // ควรเน้นตัวละครนี้หรือไม่
+}
+
+/// เอฟเฟกต์การเปลี่ยนฉาก
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TransitionEffect {
+    pub type_name: String, // "fade_in", "fade_out", "crossfade"
+    pub duration: f32,     // ระยะเวลาเป็นวินาที
 }
 
 /// ข้อมูล dialog entry
@@ -33,16 +54,24 @@ pub struct DialogEntry {
     pub choices: Vec<DialogChoice>,
     #[serde(default)]
     pub auto_proceed: Option<usize>,
+    #[serde(default)]
+    pub character_states: Vec<CharacterState>, // สถานะของตัวละครทั้งหมดในฉากนี้
+    #[serde(default)]
+    pub transition: Option<TransitionEffect>,  // เอฟเฟกต์การเปลี่ยนฉาก
+    #[serde(default)]
+    pub background: Option<String>,            // พื้นหลังที่ใช้สำหรับ entry นี้
 }
 
-/// Scene ของ dialog ทั้งหมด
+/// ข้อมูล scene ของ dialog
 #[derive(Debug, Deserialize, Serialize, TypePath, Asset, Clone)]
 pub struct DialogScene {
     pub characters: Vec<DialogCharacter>,
     pub entries: Vec<DialogEntry>,
+    #[serde(default)]
+    pub default_background: String, // พื้นหลังเริ่มต้นของฉาก
 }
 
-// Dialog asset loader
+// Dialog asset loader - คงเดิม
 #[derive(Default)]
 pub struct DialogLoader;
 

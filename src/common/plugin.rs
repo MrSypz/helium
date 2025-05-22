@@ -1,11 +1,14 @@
+// src/common/plugin.rs
 use bevy::prelude::*;
 use crate::common::helium::{VNState, DialogResource, DialogHistory};
 use crate::common::dialog::types::DialogScene;
 use crate::common::dialog::typewriter::typewriter_system;
 use crate::common::dialog::choice::{ChoiceState, handle_choice_click, debug_choice_system};
 use crate::client::render::ui::dialog::{setup_ui, update_dialog, text_click, toggle_language};
-use crate::client::render::ui::choice::{display_choices, highlight_choice_button};
-use crate::client::render::setup::setup_scene;
+use crate::client::render::ui::choice::{display_choices, highlight_choice_button, cleanup_overlay_on_choice_change};
+use crate::client::render::setup::{setup_scene, update_background};
+use crate::client::render::character::{setup_characters, update_characters};
+use crate::client::render::transition::{ActiveTransition, start_transition, update_transition};
 use crate::common::dialog::init::load_dialogs;
 
 pub struct VNPlugin;
@@ -18,9 +21,11 @@ impl Plugin for VNPlugin {
             .init_resource::<DialogResource>()
             .init_resource::<DialogHistory>()
             .init_resource::<ChoiceState>()
+            .init_resource::<ActiveTransition>()
             .add_systems(Startup, (
                 setup_scene,
                 setup_ui,
+                setup_characters,
                 load_dialogs,
             ))
             // จัดกลุ่มและลำดับการทำงานของระบบให้เหมาะสม
@@ -30,10 +35,21 @@ impl Plugin for VNPlugin {
                 typewriter_system,
                 text_click.after(display_choices),
 
+                // ระบบตัวละคร
+                update_characters.after(update_dialog),
+
+                // ระบบพื้นหลัง
+                update_background.after(update_dialog),
+
+                // ระบบ transition
+                start_transition.after(update_dialog),
+                update_transition,
+
                 // ระบบ choice
                 display_choices.after(update_dialog),
                 highlight_choice_button.after(display_choices),
                 handle_choice_click.after(display_choices),
+                cleanup_overlay_on_choice_change,
 
                 // ระบบอื่นๆ
                 toggle_language,

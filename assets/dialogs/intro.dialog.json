@@ -12,6 +12,12 @@
       "display_name": {
         "thai": "คุณ",
         "english": "You"
+      },
+      "sprite": "characters/player.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     },
     {
@@ -19,15 +25,26 @@
       "display_name": {
         "thai": "???",
         "english": "???"
+      },
+      "sprite": "characters/unknown.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     }
   ],
+  "default_background": "backgrounds/city_street.png",
   "entries": [
     {
       "character": "narrator",
       "text": {
         "thai": "ยินดีต้อนรับสู่โลกใหม่ของคุณ ที่ๆ ทุกการตัดสินใจมีความหมาย",
         "english": "Welcome to your new world, where every decision matters."
+      },
+      "transition": {
+        "type_name": "fade_in",
+        "duration": 1.0
       }
     },
     {
@@ -36,28 +53,69 @@
         "thai": "เรื่องราวของคุณกำลังจะเริ่มต้นขึ้น ณ โรงเรียนแห่งหนึ่ง...",
         "english": "Your story is about to begin at a certain school..."
       },
-      "auto_proceed": 2
+      "auto_proceed": 2,
+      "transition": {
+        "type_name": "crossfade",
+        "duration": 0.5
+      },
+      "background": "backgrounds/school_exterior.jpeg"
     },
     {
       "character": "player",
       "text": {
         "thai": "วันนี้เป็นวันแรกของการเรียน ฉันรู้สึกตื่นเต้นมาก",
         "english": "Today is my first day of school. I'm so excited."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "center",
+          "expression": "happy",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "unknown",
       "text": {
         "thai": "เฮ้! คุณคนใหม่ใช่มั้ย? ฉันชื่อมิกิ ยินดีที่ได้รู้จัก!",
         "english": "Hey! Are you the new student? I'm Miki, nice to meet you!"
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "unknown",
+          "position": "right",
+          "expression": "default",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "player",
       "text": {
         "thai": "อืม ใช่ครับ/ค่ะ ฉันเพิ่งย้ายมา ยินดีที่ได้รู้จักเช่นกัน",
         "english": "Yes, I just transferred here. Nice to meet you too."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": true
+        },
+        {
+          "name": "unknown",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "narrator",
@@ -65,7 +123,11 @@
         "thai": "และนี่คือจุดเริ่มต้นของการเดินทางครั้งใหม่ของคุณ...",
         "english": "And this is the beginning of your new journey..."
       },
-      "actions": ["change_scene:school"]
+      "actions": ["change_scene:school"],
+      "transition": {
+        "type_name": "fade_out",
+        "duration": 1.0
+      }
     }
   ]
 }

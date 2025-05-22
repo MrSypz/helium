@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use crate::common::helium::{DialogHistory, VNState};
-use crate::common::dialog::types::{DialogScene, DialogChoice};
+use crate::common::helium::{VNState};
+use crate::common::dialog::types::{DialogScene};
 use crate::common::dialog::choice::{ChoiceState, ChoiceButton};
 use crate::common::dialog::typewriter::TypewriterText;
 use crate::client::render::ui::dialog::DialogText;

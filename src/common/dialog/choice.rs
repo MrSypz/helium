@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use crate::common::helium::{VNState, DialogHistory};
 use crate::common::dialog::types::DialogChoice;
 use crate::client::render::ui::choice::{ChoiceContainer, ChoiceOverlay};
-use crate::common::util::input_handler::InputSource;
 
 /// Component สำหรับปุ่มตัวเลือก
 #[derive(Component)]

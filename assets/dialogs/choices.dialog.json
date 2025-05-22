@@ -12,6 +12,12 @@
       "display_name": {
         "thai": "คุณ",
         "english": "You"
+      },
+      "sprite": "characters/player.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     },
     {
@@ -19,6 +25,12 @@
       "display_name": {
         "thai": "มิกิ",
         "english": "Miki"
+      },
+      "sprite": "characters/miki.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     },
     {
@@ -26,6 +38,12 @@
       "display_name": {
         "thai": "ทาคาชิ",
         "english": "Takashi"
+      },
+      "sprite": "characters/takashi.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     },
     {
@@ -33,16 +51,41 @@
       "display_name": {
         "thai": "ยูอิ",
         "english": "Yui"
+      },
+      "sprite": "characters/yui.png",
+      "positions": {
+        "center": [0.0, -50.0],
+        "left": [-400.0, -50.0],
+        "right": [400.0, -50.0]
       }
     }
   ],
+  "default_background": "backgrounds/school_hallway.png",
   "entries": [
     {
       "character": "narrator",
       "text": {
         "thai": "เสียงกริ่งดังขึ้น บ่งบอกว่าถึงเวลาพักกลางวันแล้ว",
         "english": "The bell rings, signaling the start of lunch break."
-      }
+      },
+      "transition": {
+        "type_name": "fade_in",
+        "duration": 1.0
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -50,6 +93,20 @@
         "thai": "ในที่สุดก็ถึงเวลาพักแล้ว! คุณอยากไปที่ไหนก่อนดี?",
         "english": "Finally, lunch break! Where would you like to go first?"
       },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": true
+        }
+      ],
       "choices": [
         {
           "text": {
@@ -79,6 +136,25 @@
       "text": {
         "thai": "โรงอาหารเลยนะ! ฉันชอบอาหารที่นี่มาก โดยเฉพาะแกงกะหรี่ของเชฟยามาดะ!",
         "english": "Cafeteria it is! I love the food here, especially Chef Yamada's curry!"
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": true
+        }
+      ],
+      "background": "backgrounds/cafeteria.png",
+      "transition": {
+        "type_name": "crossfade",
+        "duration": 0.5
       }
     },
     {
@@ -86,7 +162,21 @@
       "text": {
         "thai": "คุณและมิกิเดินไปที่โรงอาหาร ที่นั่นเต็มไปด้วยนักเรียนและมีกลิ่นอาหารหอมฟุ้ง",
         "english": "You and Miki head to the cafeteria, which is bustling with students and filled with delicious aromas."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -94,13 +184,46 @@
         "thai": "เราควรลองแกงกะหรี่ด้วยกัน! มันอร่อยมากจริงๆ นะ",
         "english": "We should try the curry together! It's really amazing."
       },
-      "auto_proceed": 11
+      "auto_proceed": 11,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "miki",
       "text": {
         "thai": "ห้องสมุดเหรอ? แน่นอน! มันเงียบสงบและเป็นที่ที่ดีมากสำหรับการอ่านหนังสือ",
         "english": "The library? Sure! It's quiet and a great place to read."
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": true
+        }
+      ],
+      "background": "backgrounds/library.png",
+      "transition": {
+        "type_name": "crossfade",
+        "duration": 0.5
       }
     },
     {
@@ -108,7 +231,21 @@
       "text": {
         "thai": "คุณและมิกิเดินไปที่ห้องสมุด ที่นั่นเต็มไปด้วยชั้นหนังสือสูงและมีบรรยากาศที่สงบ",
         "english": "You and Miki walk to the library. It's filled with tall bookshelves and has a peaceful atmosphere."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -116,13 +253,46 @@
         "thai": "ห้องสมุดของเรามีหนังสือหลายประเภทมาก ทั้งเรื่องเรียนและนวนิยาย คุณชอบอ่านหนังสือแนวไหนเหรอ?",
         "english": "Our library has many types of books, both for studies and fiction. What kind of books do you like to read?"
       },
-      "auto_proceed": 11
+      "auto_proceed": 11,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "miki",
       "text": {
         "thai": "แน่นอน! เพื่อนของฉันกำลังรออยู่ที่สวนหลังโรงเรียน ไปเจอพวกเขากันเถอะ!",
         "english": "Sure! My friends are waiting at the garden behind the school. Let's meet them!"
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": true
+        }
+      ],
+      "background": "backgrounds/school_garden.png",
+      "transition": {
+        "type_name": "crossfade",
+        "duration": 0.5
       }
     },
     {
@@ -130,21 +300,87 @@
       "text": {
         "thai": "คุณและมิกิเดินไปที่สวน ที่นั่นมีนักเรียนสองคนกำลังคุยกันอยู่ใต้ต้นไม้ใหญ่",
         "english": "You and Miki walk to the garden. There are two students chatting under a large tree."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
       "text": {
         "thai": "นี่คือทาคาชิและยูอิ พวกเขาเป็นเพื่อนที่ดีที่สุดของฉัน!",
         "english": "These are Takashi and Yui, my best friends!"
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "center",
+          "expression": "happy",
+          "highlight": true
+        },
+        {
+          "name": "takashi",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "yui",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "narrator",
       "text": {
         "thai": "ขณะที่พักกลางวันดำเนินไป คุณได้พูดคุยและทำความรู้จักกับโรงเรียนใหม่มากขึ้น",
         "english": "As lunch break continues, you chat and get to know more about your new school."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "center",
+          "expression": "happy",
+          "highlight": false
+        },
+        {
+          "name": "takashi",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "yui",
+          "position": "right",
+          "expression": "smile",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -152,6 +388,20 @@
         "thai": "อ้อ! เกือบลืมบอก หลังเลิกเรียนวันนี้มีกิจกรรมชมรมด้วย คุณสนใจจะเข้าร่วมชมรมไหนไหม?",
         "english": "Oh! I almost forgot to tell you, there are club activities after school today. Are you interested in joining any club?"
       },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": true
+        }
+      ],
       "choices": [
         {
           "text": {
@@ -189,7 +439,27 @@
         "thai": "ชมรมกีฬาเหรอ? เยี่ยมเลย! ทาคาชิก็อยู่ชมรมนี้เหมือนกัน พวกเขากำลังต้องการคนเพิ่มพอดี!",
         "english": "Sports club? Great! Takashi is in that club too. They're looking for new members!"
       },
-      "auto_proceed": 17
+      "auto_proceed": 17,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "center",
+          "expression": "happy",
+          "highlight": true
+        },
+        {
+          "name": "takashi",
+          "position": "right",
+          "expression": "happy",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -197,7 +467,27 @@
         "thai": "ชมรมศิลปะเหรอ? ฉันชอบเลย! ยูอิเป็นประธานชมรมนี้ด้วย เธอวาดรูปได้สวยมาก!",
         "english": "Art club? I love it! Yui is the president of that club. She draws beautifully!"
       },
-      "auto_proceed": 17
+      "auto_proceed": 17,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "center",
+          "expression": "happy",
+          "highlight": true
+        },
+        {
+          "name": "yui",
+          "position": "right",
+          "expression": "happy",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
@@ -205,7 +495,21 @@
         "thai": "ชมรมวิทยาศาสตร์? น่าสนใจมาก! พวกเขามีการทดลองสนุกๆ ทุกสัปดาห์เลยนะ!",
         "english": "Science club? Very interesting! They have fun experiments every week!"
       },
-      "auto_proceed": 17
+      "auto_proceed": 17,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "miki",
@@ -213,21 +517,63 @@
         "thai": "ไม่เป็นไร ไม่ต้องรีบตัดสินใจก็ได้ คุณมีเวลาลองดูชมรมต่างๆ ก่อนตัดสินใจได้เลย",
         "english": "No problem, no rush to decide. You have time to explore different clubs before making a decision."
       },
-      "auto_proceed": 17
+      "auto_proceed": 17,
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "narrator",
       "text": {
         "thai": "เสียงกริ่งดังขึ้นอีกครั้ง บ่งบอกว่าเวลาพักกลางวันหมดลงแล้ว",
         "english": "The bell rings again, signaling the end of lunch break."
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "default",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "default",
+          "highlight": false
+        }
+      ]
     },
     {
       "character": "miki",
       "text": {
         "thai": "แย่แล้ว! เราต้องรีบกลับไปที่ห้องเรียนแล้ว! ไปกันเถอะ!",
         "english": "Oh no! We need to hurry back to class! Let's go!"
-      }
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "surprised",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "surprised",
+          "highlight": true
+        }
+      ]
     },
     {
       "character": "narrator",
@@ -235,7 +581,25 @@
         "thai": "ขณะที่คุณวิ่งกลับไปที่ห้องเรียนพร้อมกับมิกิ คุณรู้สึกว่าการใช้ชีวิตที่โรงเรียนใหม่นี้จะน่าสนใจมากทีเดียว",
         "english": "As you run back to the classroom with Miki, you feel that life at this new school is going to be very interesting."
       },
-      "actions": ["change_scene:intro"]
+      "actions": ["change_scene:intro"],
+      "transition": {
+        "type_name": "fade_out",
+        "duration": 1.5
+      },
+      "character_states": [
+        {
+          "name": "player",
+          "position": "left",
+          "expression": "smile",
+          "highlight": false
+        },
+        {
+          "name": "miki",
+          "position": "right",
+          "expression": "happy",
+          "highlight": false
+        }
+      ]
     }
   ]
 }
