@@ -18,9 +18,6 @@ pub fn setup_scene(
     dialog_scenes: Res<Assets<DialogScene>>,
     state: Res<VNState>,
 ) {
-    // กล้อง
-    commands.spawn(Camera2dBundle::default());
-
     // พื้นหลังเริ่มต้น
     let default_bg = "backgrounds/school.png";
 

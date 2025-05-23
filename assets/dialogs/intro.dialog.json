@@ -41,10 +41,6 @@
       "text": {
         "thai": "ยินดีต้อนรับสู่โลกใหม่ของคุณ ที่ๆ ทุกการตัดสินใจมีความหมาย",
         "english": "Welcome to your new world, where every decision matters."
-      },
-      "transition": {
-        "type_name": "fade_in",
-        "duration": 1.0
       }
     },
     {
@@ -54,10 +50,6 @@
         "english": "Your story is about to begin at a certain school..."
       },
       "auto_proceed": 2,
-      "transition": {
-        "type_name": "crossfade",
-        "duration": 0.5
-      },
       "background": "backgrounds/school_exterior.jpeg"
     },
     {
@@ -123,11 +115,7 @@
         "thai": "และนี่คือจุดเริ่มต้นของการเดินทางครั้งใหม่ของคุณ...",
         "english": "And this is the beginning of your new journey..."
       },
-      "actions": ["change_scene:school"],
-      "transition": {
-        "type_name": "fade_out",
-        "duration": 1.0
-      }
+      "actions": ["change_scene:school"]
     }
   ]
 }

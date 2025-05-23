@@ -1,3 +1,4 @@
+// src/common/dialog/types.rs
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::asset::{AssetLoader, LoadContext, AsyncReadExt};
@@ -35,14 +36,7 @@ pub struct CharacterState {
     pub highlight: bool, // ควรเน้นตัวละครนี้หรือไม่
 }
 
-/// เอฟเฟกต์การเปลี่ยนฉาก
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct TransitionEffect {
-    pub type_name: String, // "fade_in", "fade_out", "crossfade"
-    pub duration: f32,     // ระยะเวลาเป็นวินาที
-}
-
-/// ข้อมูล dialog entry
+/// ข้อมูล dialog entry (เอา transition ออกแล้ว)
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DialogEntry {
     pub character: String,
@@ -55,8 +49,6 @@ pub struct DialogEntry {
     pub auto_proceed: Option<usize>,
     #[serde(default)]
     pub character_states: Vec<CharacterState>, // สถานะของตัวละครทั้งหมดในฉากนี้
-    #[serde(default)]
-    pub transition: Option<TransitionEffect>,  // เอฟเฟกต์การเปลี่ยนฉาก
     #[serde(default)]
     pub background: Option<String>,            // พื้นหลังที่ใช้สำหรับ entry นี้
 }
