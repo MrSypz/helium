@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use crate::core::resources::{VNState, DialogHistory};
 use crate::core::dialog::typewriter::TypewriterText;
 use crate::ui::dialog::DialogBox;
 
@@ -62,19 +61,4 @@ pub fn detect_key_press(
 
 pub fn is_dialog_text_finished(typewriter: &TypewriterText) -> bool {
     typewriter.char_index >= typewriter.full_text.chars().count()
-}
-
-pub fn switch_language(state: &mut VNState) -> bool {
-    let old_language = state.language.clone();
-    state.language = if state.language == "thai" {
-        "english".to_string()
-    } else {
-        "thai".to_string()
-    };
-
-    old_language != state.language
-}
-
-pub fn handle_back_action(history: &mut DialogHistory) -> Option<usize> {
-    history.go_back()
 }

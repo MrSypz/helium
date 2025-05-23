@@ -29,6 +29,9 @@ impl Plugin for VNPlugin {
             .add_event::<DialogResetEvent>()
             .add_event::<ChangeStateEvent>()
 
+            // Setup camera เพียงครั้งเดียวตอนเริ่มต้น
+            .add_systems(Startup, setup_global_camera)
+
             // Global systems
             .add_systems(Update, (
                 handle_state_changes,
@@ -50,7 +53,6 @@ impl Plugin for VNPlugin {
 
             // In-Game
             .add_systems(OnEnter(GameState::InGame), (
-                setup_camera,
                 setup_dialog_ui,
                 load_dialogs,
                 setup_scene_background,
@@ -82,8 +84,12 @@ impl Plugin for VNPlugin {
     }
 }
 
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+// สร้าง camera เพียงครั้งเดียวตอนเริ่มต้นเกม
+fn setup_global_camera(mut commands: Commands) {
+    commands.spawn((
+        Camera2dBundle::default(),
+        Name::new("main_camera"),
+    ));
 }
 
 fn cleanup_loading_screen(
@@ -91,7 +97,7 @@ fn cleanup_loading_screen(
     loading_query: Query<Entity, (With<Node>, Without<Camera>)>,
 ) {
     for entity in loading_query.iter() {
-        if let Some(mut entity_commands) = commands.get_entity(entity) {
+        if let Some(entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }
@@ -102,7 +108,7 @@ fn cleanup_game_scene(
     game_entities: Query<Entity, (Without<Camera>, Without<Window>)>,
 ) {
     for entity in game_entities.iter() {
-        if let Some(mut entity_commands) = commands.get_entity(entity) {
+        if let Some(entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }

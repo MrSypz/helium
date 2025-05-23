@@ -26,8 +26,6 @@ pub fn setup_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    commands.spawn(Camera2dBundle::default());
-
     let title_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
     let button_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
 

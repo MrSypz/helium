@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::core::resources::{DialogHistory, DialogResource, VNState, DialogManager};
+use crate::core::resources::{DialogHistory, DialogResource, VNState};
 use crate::core::dialog::choice::ChoiceState;
 use crate::core::dialog::typewriter::TypewriterText;
 use crate::util::input;
