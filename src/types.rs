@@ -1,4 +1,3 @@
-// src/common/dialog/types.rs
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::asset::{AssetLoader, LoadContext, AsyncReadExt};
@@ -7,18 +6,16 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 
-/// ข้อมูลตัวละคร
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DialogCharacter {
     pub name: String,
     pub display_name: HashMap<String, String>,
     #[serde(default)]
-    pub sprite: String, // เพิ่มพาธไปยังไฟล์สไปรต์
+    pub sprite: String,
     #[serde(default)]
-    pub positions: HashMap<String, Vec2>, // ตำแหน่งทางเลือกของตัวละคร
+    pub positions: HashMap<String, Vec2>,
 }
 
-/// ตัวเลือกใน dialog
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DialogChoice {
     pub text: HashMap<String, String>,
@@ -27,16 +24,14 @@ pub struct DialogChoice {
     pub conditions: Vec<String>,
 }
 
-/// สถานะของตัวละครใน entry
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterState {
     pub name: String,
-    pub position: String, // ตำแหน่งที่กำหนดไว้ล่วงหน้า (left, right, center)
-    pub expression: String, // สีหน้า/ท่าทาง
-    pub highlight: bool, // ควรเน้นตัวละครนี้หรือไม่
+    pub position: String,
+    pub expression: String,
+    pub highlight: bool,
 }
 
-/// ข้อมูล dialog entry (เอา transition ออกแล้ว)
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DialogEntry {
     pub character: String,
@@ -48,21 +43,19 @@ pub struct DialogEntry {
     #[serde(default)]
     pub auto_proceed: Option<usize>,
     #[serde(default)]
-    pub character_states: Vec<CharacterState>, // สถานะของตัวละครทั้งหมดในฉากนี้
+    pub character_states: Vec<CharacterState>,
     #[serde(default)]
-    pub background: Option<String>,            // พื้นหลังที่ใช้สำหรับ entry นี้
+    pub background: Option<String>,
 }
 
-/// ข้อมูล scene ของ dialog
 #[derive(Debug, Deserialize, Serialize, TypePath, Asset, Clone)]
 pub struct DialogScene {
     pub characters: Vec<DialogCharacter>,
     pub entries: Vec<DialogEntry>,
     #[serde(default)]
-    pub default_background: String, // พื้นหลังเริ่มต้นของฉาก
+    pub default_background: String,
 }
 
-// Dialog asset loader - คงเดิม
 #[derive(Default)]
 pub struct DialogLoader;
 
@@ -81,7 +74,6 @@ impl AssetLoader for DialogLoader {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
             let dialog_scene: DialogScene = serde_json::from_slice(&bytes)?;
-
             Ok(dialog_scene)
         })
     }

@@ -1,7 +1,6 @@
-// src/main.rs
 use bevy::prelude::*;
-use helium::common::plugin::VNPlugin;
-use helium::common::game_state::GameState;
+use helium::core::plugin::VNPlugin;
+use helium::core::game_state::GameState;
 
 fn main() {
     App::new()
@@ -15,7 +14,6 @@ fn main() {
             ..default()
         }))
         .add_plugins(VNPlugin)
-        // เริ่มต้นที่ MainMenu state
         .insert_state(GameState::MainMenu)
         .run();
 }

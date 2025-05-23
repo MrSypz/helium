@@ -1,23 +1,21 @@
 use bevy::prelude::*;
-use crate::common::helium::VNState;
-use crate::common::dialog::types::DialogScene;
-use crate::common::dialog::choice::{ChoiceState, ChoiceButton};
-use crate::common::dialog::typewriter::TypewriterText;
-use crate::client::render::ui::dialog::DialogText;
+use crate::core::resources::VNState;
+use crate::core::dialog::choice::{ChoiceState, ChoiceButton};
+use crate::core::dialog::typewriter::TypewriterText;
+use crate::core::language::manager::{LanguageResource, get_text};
+use crate::core::language::types::LanguagePack;
+use crate::ui::dialog::DialogText;
+use crate::types::{DialogScene, DialogChoice};
 
-/// Component สำหรับ Choice Container
 #[derive(Component)]
 pub struct ChoiceContainer;
 
-/// Component สำหรับ Choice Text
 #[derive(Component)]
 pub struct ChoiceText;
 
-/// Component สำหรับ Choice Overlay
 #[derive(Component)]
 pub struct ChoiceOverlay;
 
-// Constants for UI - เหมือนเดิม
 const CHOICE_Z_LAYER: f32 = 15.0;
 const CHOICE_TITLE_COLOR: Color = Color::srgb(1.0, 0.85, 0.3);
 const CHOICE_TEXT_COLOR: Color = Color::WHITE;
@@ -28,58 +26,54 @@ const CHOICE_BUTTON_BORDER: Color = Color::srgba(0.6, 0.6, 0.7, 0.5);
 const CHOICE_BUTTON_HOVER: Color = Color::srgba(0.3, 0.3, 0.4, 0.95);
 const CHOICE_BUTTON_ACTIVE: Color = Color::srgba(0.4, 0.4, 0.5, 1.0);
 
-/// แสดงตัวเลือกเมื่อถึงจุดที่มีตัวเลือก - ปรับปรุงแล้ว
 pub fn manage_choice_display(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     state: Res<VNState>,
     dialog_scenes: Res<Assets<DialogScene>>,
+    language_resource: Res<LanguageResource>,
+    language_packs: Res<Assets<LanguagePack>>,
     mut choice_state: ResMut<ChoiceState>,
     existing_containers: Query<Entity, With<ChoiceContainer>>,
     existing_overlays: Query<Entity, With<ChoiceOverlay>>,
     typewriter_query: Query<&TypewriterText, With<DialogText>>,
 ) {
-    // ตรวจสอบว่าควรแสดงตัวเลือกหรือไม่
     let should_show_choices = should_display_choices(&state, &dialog_scenes, &typewriter_query);
 
     if should_show_choices && !choice_state.active {
-        // ได้เวลาแสดงตัวเลือก
         if let Some(choices) = get_current_choices(&state, &dialog_scenes) {
-            // ลบตัวเลือกเก่าถ้ามี
             cleanup_existing_choices(&mut commands, &existing_containers, &existing_overlays);
-
-            // เปิดใช้งานตัวเลือก
             choice_state.activate(choices.clone());
-
-            // สร้าง UI ใหม่
-            create_choice_ui(&mut commands, &asset_server, &state, &choices);
+            create_choice_ui(
+                &mut commands,
+                &asset_server,
+                &state,
+                &language_resource,
+                &language_packs,
+                &choices
+            );
         }
     } else if !should_show_choices && choice_state.active {
-        // ไม่ควรแสดงตัวเลือกแล้ว แต่ยังแสดงอยู่ -> ปิด
         choice_state.deactivate();
         cleanup_existing_choices(&mut commands, &existing_containers, &existing_overlays);
     }
 }
 
-/// ตรวจสอบว่าควรแสดงตัวเลือกหรือไม่
 fn should_display_choices(
     state: &VNState,
     dialog_scenes: &Assets<DialogScene>,
     typewriter_query: &Query<&TypewriterText, With<DialogText>>,
 ) -> bool {
-    // ตรวจสอบว่า stage ปัจจุบันมีตัวเลือกหรือไม่
     if let Some(scene_handle) = &state.current_scene_handle {
         if let Some(scene) = dialog_scenes.get(scene_handle) {
             if state.stage < scene.entries.len() {
                 let entry = &scene.entries[state.stage];
 
-                // ถ้ามีตัวเลือก และข้อความแสดงเสร็จแล้ว
                 if !entry.choices.is_empty() {
-                    // ตรวจสอบว่าข้อความปัจจุบันพิมพ์จบแล้วหรือไม่
                     if let Ok(typewriter) = typewriter_query.get_single() {
                         return typewriter.char_index >= typewriter.full_text.chars().count();
                     }
-                    return true; // ถ้าไม่มี typewriter ให้ถือว่าเสร็จแล้ว
+                    return true;
                 }
             }
         }
@@ -87,11 +81,10 @@ fn should_display_choices(
     false
 }
 
-/// ดึงตัวเลือกสำหรับ stage ปัจจุบัน
 fn get_current_choices(
     state: &VNState,
     dialog_scenes: &Assets<DialogScene>,
-) -> Option<Vec<crate::common::dialog::types::DialogChoice>> {
+) -> Option<Vec<DialogChoice>> {
     if let Some(scene_handle) = &state.current_scene_handle {
         if let Some(scene) = dialog_scenes.get(scene_handle) {
             if state.stage < scene.entries.len() {
@@ -105,7 +98,6 @@ fn get_current_choices(
     None
 }
 
-/// ลบตัวเลือกที่มีอยู่
 fn cleanup_existing_choices(
     commands: &mut Commands,
     containers: &Query<Entity, With<ChoiceContainer>>,
@@ -119,16 +111,14 @@ fn cleanup_existing_choices(
     }
 }
 
-/// สร้าง Choice UI
 fn create_choice_ui(
     commands: &mut Commands,
     asset_server: &AssetServer,
     state: &VNState,
-    choices: &[crate::common::dialog::types::DialogChoice],
+    language_resource: &LanguageResource,
+    language_packs: &Assets<LanguagePack>,
+    choices: &[DialogChoice],
 ) {
-    info!("สร้าง UI ตัวเลือก {} ทางเลือก", choices.len());
-
-    // สร้าง overlay ทั้งหน้าจอ
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -145,7 +135,6 @@ fn create_choice_ui(
         ChoiceOverlay,
     ));
 
-    // สร้าง panel หลักสำหรับตัวเลือก
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -169,10 +158,10 @@ fn create_choice_ui(
         Name::new("choice_container"),
         ChoiceContainer,
     )).with_children(|parent| {
-        // Title
+        // Title - ใช้ language system
         parent.spawn((
             TextBundle::from_section(
-                if state.language == "thai" { "เลือกการกระทำของคุณ" } else { "Choose your action" },
+                get_text(language_resource, language_packs, "dialog.choose_action"),
                 TextStyle {
                     font: asset_server.load("fonts/NotoSansThai-Bold.ttf"),
                     font_size: 32.0,
@@ -186,48 +175,30 @@ fn create_choice_ui(
             Name::new("choice_title"),
         ));
 
-        // Divider
-        parent.spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Px(1.0),
-                margin: UiRect::vertical(Val::Px(5.0)),
-                ..default()
-            },
-            background_color: Color::srgba(0.6, 0.6, 0.7, 0.3).into(),
-            ..default()
-        });
-
-        // สร้างปุ่มสำหรับแต่ละตัวเลือก
         for (i, choice) in choices.iter().enumerate() {
             create_choice_button(parent, asset_server, state, i, choice);
         }
-
-        // Bottom divider
-        parent.spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Px(1.0),
-                margin: UiRect::vertical(Val::Px(10.0)),
-                ..default()
-            },
-            background_color: Color::srgba(0.6, 0.6, 0.7, 0.3).into(),
-            ..default()
-        });
     });
 }
 
-/// สร้างปุ่มตัวเลือก
 fn create_choice_button(
     parent: &mut ChildBuilder,
     asset_server: &AssetServer,
     state: &VNState,
     index: usize,
-    choice: &crate::common::dialog::types::DialogChoice,
+    choice: &DialogChoice,
 ) {
-    let choice_text = choice.text.get(&state.language)
+    // ใช้ current language จาก state.language แทน hardcode
+    let current_lang = match state.language.as_str() {
+        "thai" => "thai",
+        "english" => "english",
+        "japanese" => "japanese",
+        _ => "thai", // fallback
+    };
+
+    let choice_text = choice.text.get(current_lang)
         .cloned()
-        .unwrap_or_else(|| format!("[No choice text in {}]", state.language));
+        .unwrap_or_else(|| format!("[No choice text in {}]", current_lang));
 
     parent.spawn((
         ButtonBundle {
@@ -252,7 +223,6 @@ fn create_choice_button(
         },
         Name::new(format!("choice_button_{}", index)),
     )).with_children(|button| {
-        // Number indicator
         button.spawn(NodeBundle {
             style: Style {
                 width: Val::Px(30.0),
@@ -275,7 +245,6 @@ fn create_choice_button(
             ));
         });
 
-        // Choice text
         button.spawn((
             TextBundle::from_section(
                 choice_text,
@@ -296,7 +265,6 @@ fn create_choice_button(
     });
 }
 
-/// ตรวจสอบการชี้ (hover) ที่ปุ่มตัวเลือก
 pub fn highlight_choice_button(
     mut query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<ChoiceButton>)>,
 ) {

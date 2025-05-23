@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-/// Utility สำหรับการโหลด Asset
 #[derive(Clone)]
 pub struct Identifier {
     path: String,
@@ -28,4 +27,8 @@ pub fn texture(path: &str) -> Identifier {
 
 pub fn dialog(path: &str) -> Identifier {
     of("dialogs", path)
+}
+
+pub fn language(path: &str) -> Identifier {
+    of("lang", path)
 }
