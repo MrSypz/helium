@@ -5,6 +5,7 @@ use crate::common::helium::{DialogHistory, DialogResource, VNState, DialogManage
 use crate::util::input_handler;
 use bevy::prelude::*;
 
+// UI component tags
 #[derive(Component)]
 pub struct DialogBox;
 
@@ -131,7 +132,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
-/// Central dialog management system - ระบบหลักสำหรับจัดการ dialog
+/// Central dialog management system - ลด logging
 pub fn manage_dialog_state(
     mut state: ResMut<VNState>,
     mut dialog_manager: ResMut<DialogManager>,
@@ -183,7 +184,9 @@ pub fn manage_dialog_state(
                         &dialog_text,
                     );
 
-                    info!("โหลด dialog ใหม่: {} - {}", character_display_name, dialog_text.chars().take(30).collect::<String>());
+                    // Log เฉพาะข้อความใหม่ที่สำคัญ
+                    info!("โหลด dialog ใหม่: {} - {}", character_display_name,
+                          dialog_text.chars().take(50).collect::<String>().trim());
                 }
             }
         }

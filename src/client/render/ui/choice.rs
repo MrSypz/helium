@@ -126,7 +126,7 @@ fn create_choice_ui(
     state: &VNState,
     choices: &[crate::common::dialog::types::DialogChoice],
 ) {
-    info!("สร้างตัวเลือก {} ทางเลือก", choices.len());
+    info!("สร้าง UI ตัวเลือก {} ทางเลือก", choices.len());
 
     // สร้าง overlay ทั้งหน้าจอ
     commands.spawn((

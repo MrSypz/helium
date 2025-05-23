@@ -8,7 +8,8 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct CharacterSprite {
     pub name: String,
-    pub loaded: bool, // เพิ่มการติดตามว่าโหลดแล้วหรือไม่
+    pub loaded: bool,
+    pub last_stage: Option<usize>, // เพิ่ม field นี้เพื่อติดตาม stage ล่าสุดที่อัพเดท
 }
 
 /// คอมโพเนนต์สำหรับการเปลี่ยน expression
@@ -28,7 +29,7 @@ const DIMMED_SCALE: Vec3 = Vec3::new(0.8, 0.8, 0.8);
 const HIGHLIGHT_COLOR: Color = Color::WHITE;
 const DIMMED_COLOR: Color = Color::srgba(0.6, 0.6, 0.6, 0.8);
 
-/// ระบบสำหรับการตรวจสอบและโหลดตัวละคร - ทำงานใน Update แทน Startup
+/// ระบบสำหรับการตรวจสอบและโหลดตัวละคร
 pub fn setup_characters(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -50,7 +51,6 @@ pub fn setup_characters(
                 if !character.sprite.is_empty() {
                     info!("สร้างตัวละคร: {} จากไฟล์: {}", character.name, character.sprite);
 
-                    // ใช้ default texture ก่อน แล้วค่อยเปลี่ยนเมื่อโหลดเสร็จ
                     let sprite_handle = texture(&character.sprite).load::<Image>(&asset_server);
 
                     // สร้างเอนทิตี้ตัวละคร
@@ -72,6 +72,7 @@ pub fn setup_characters(
                         CharacterSprite {
                             name: character.name.clone(),
                             loaded: false,
+                            last_stage: None, // เริ่มต้นไม่มี stage
                         },
                         ExpressionState {
                             current: "default".to_string(),
@@ -80,15 +81,9 @@ pub fn setup_characters(
                     )).id();
 
                     info!("สร้างตัวละคร entity: {:?} สำหรับ {}", entity, character.name);
-                } else {
-                    info!("ตัวละคร {} ไม่มี sprite", character.name);
                 }
             }
-        } else {
-            warn!("ไม่พบ dialog scene ใน assets");
         }
-    } else {
-        warn!("ไม่มี current_scene_handle");
     }
 }
 
@@ -109,7 +104,7 @@ pub fn check_character_assets(
                     character.loaded = true; // ทำเครื่องหมายว่าพยายามโหลดแล้ว
                 },
                 _ => {
-                    // ยังโหลดไม่เสร็จ
+                    // ยังโหลดไม่เสร็จ - ไม่ต้อง log
                 }
             }
         }
@@ -130,7 +125,7 @@ fn position_from_string(position: &str) -> Vec3 {
     }
 }
 
-/// ระบบสำหรับอัพเดทตำแหน่งและสถานะของตัวละคร
+/// ระบบสำหรับอัพเดทตำแหน่งและสถานะของตัวละคร - ลด logging
 pub fn update_characters(
     state: Res<VNState>,
     dialog_scenes: Res<Assets<DialogScene>>,
@@ -138,7 +133,7 @@ pub fn update_characters(
         &mut Transform,
         &mut Sprite,
         &mut Visibility,
-        &CharacterSprite,
+        &mut CharacterSprite,
     )>,
     time: Res<Time>,
 ) {
@@ -148,23 +143,20 @@ pub fn update_characters(
                 let entry = &scene.entries[state.stage];
                 let speaking_character = &entry.character;
 
-                info!("อัพเดทตัวละคร stage: {}, character_states: {}", 
-                      state.stage, entry.character_states.len());
-
-                // เริ่มต้นให้ซ่อนตัวละครทั้งหมด
-                for (mut transform, mut sprite, mut visibility, character) in
+                // อัพเดทตัวละครทั้งหมด
+                for (mut transform, mut sprite, mut visibility, mut character) in
                     character_query.iter_mut()
                 {
-                    // เริ่มต้นซ่อนทุกตัว
+                    // อัพเดท last_stage
+                    character.last_stage = Some(state.stage);
+
+                    // เริ่มต้นให้ซ่อนตัวละครทั้งหมด
                     let mut should_show = false;
 
                     // ตรวจสอบว่าตัวละครนี้มีอยู่ในเอนทรี่ปัจจุบันหรือไม่
                     for char_state in &entry.character_states {
                         if char_state.name == character.name {
                             should_show = true;
-
-                            info!("แสดงตัวละคร: {} ที่ตำแหน่ง: {}", 
-                                  character.name, char_state.position);
 
                             // แสดงตัวละคร
                             *visibility = Visibility::Visible;
@@ -225,10 +217,15 @@ pub fn update_characters(
                     }
                 }
             } else {
-                warn!("Stage {} เกินจำนวน entries ({}) ที่มี", state.stage, scene.entries.len());
+                // Log เฉพาะครั้งแรกที่เกิด error
+                static mut LOGGED_STAGE_ERROR: Option<usize> = None;
+                unsafe {
+                    if LOGGED_STAGE_ERROR != Some(state.stage) {
+                        warn!("Stage {} เกินจำนวน entries ({}) ที่มี", state.stage, scene.entries.len());
+                        LOGGED_STAGE_ERROR = Some(state.stage);
+                    }
+                }
             }
-        } else {
-            warn!("ไม่พบ dialog scene ใน update_characters");
         }
     }
 }
@@ -246,7 +243,8 @@ pub fn debug_characters(
         info!("Scene ปัจจุบัน: {}", state.current_scene);
 
         for character in character_query.iter() {
-            info!("ตัวละคร: {} (โหลดแล้ว: {})", character.name, character.loaded);
+            info!("ตัวละคร: {} (โหลดแล้ว: {}, last_stage: {:?})",
+                  character.name, character.loaded, character.last_stage);
         }
     }
 }

@@ -15,7 +15,8 @@ pub struct TransitionOverlay {
 pub struct ActiveTransition {
     pub entity: Option<Entity>,
     pub active: bool,
-    pub current_stage: usize, // เพิ่มการติดตาม stage ที่เริ่ม transition
+    pub current_stage: usize,
+    pub logged_start: bool, // เพิ่มเพื่อป้องกัน log ซ้ำ
 }
 
 impl Default for ActiveTransition {
@@ -24,11 +25,12 @@ impl Default for ActiveTransition {
             entity: None,
             active: false,
             current_stage: 0,
+            logged_start: false,
         }
     }
 }
 
-/// ระบบสำหรับเริ่มการเปลี่ยนฉาก
+/// ระบบสำหรับเริ่มการเปลี่ยนฉาก - ลด logging
 pub fn start_transition(
     mut commands: Commands,
     state: Res<VNState>,
@@ -46,6 +48,12 @@ pub fn start_transition(
                 let entry = &scene.entries[state.stage];
 
                 if let Some(transition) = &entry.transition {
+                    // Log เฉพาะครั้งแรกที่เริ่ม transition
+                    if !active_transition.logged_start || active_transition.current_stage != state.stage {
+                        info!("เริ่ม transition: {} สำหรับ stage {}", transition.type_name, state.stage);
+                        active_transition.logged_start = true;
+                    }
+
                     // สร้าง overlay สำหรับการเปลี่ยนฉาก (ปกคลุมทั้งหน้าจอ)
                     let color = match transition.type_name.as_str() {
                         "fade_in" => Color::srgba(0.0, 0.0, 0.0, 1.0),
@@ -74,16 +82,14 @@ pub fn start_transition(
 
                     active_transition.entity = Some(entity);
                     active_transition.active = true;
-                    active_transition.current_stage = state.stage; // บันทึก stage ที่เริ่ม transition
-
-                    info!("เริ่ม transition: {} สำหรับ stage {}", transition.type_name, state.stage);
+                    active_transition.current_stage = state.stage;
                 }
             }
         }
     }
 }
 
-/// ระบบสำหรับอัพเดทการเปลี่ยนฉาก
+/// ระบบสำหรับอัพเดทการเปลี่ยนฉาก - ลด logging
 pub fn update_transition(
     mut commands: Commands,
     time: Res<Time>,
@@ -123,6 +129,7 @@ pub fn update_transition(
                 commands.entity(entity).despawn_recursive();
                 active_transition.active = false;
                 active_transition.entity = None;
+                active_transition.logged_start = false;
                 info!("จบ transition สำหรับ stage {}", active_transition.current_stage);
             }
         }

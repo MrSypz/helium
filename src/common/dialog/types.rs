@@ -1,4 +1,3 @@
-// src/common/dialog/types.rs
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::asset::{AssetLoader, LoadContext, AsyncReadExt};

@@ -6,7 +6,7 @@ use crate::common::dialog::typewriter::typewriter_system;
 use crate::common::dialog::choice::{ChoiceState, handle_choice_selection, debug_choice_system};
 use crate::client::render::ui::dialog::{setup_ui, manage_dialog_state, handle_text_interaction, handle_language_toggle};
 use crate::client::render::ui::choice::{manage_choice_display, highlight_choice_button};
-use crate::client::render::setup::{setup_scene, update_background};
+use crate::client::render::setup::{setup_scene, update_background, check_asset_loading};
 use crate::client::render::character::{setup_characters, update_characters, check_character_assets, debug_characters};
 use crate::client::render::transition::{ActiveTransition, start_transition, update_transition};
 use crate::common::dialog::init::load_dialogs;
@@ -26,11 +26,11 @@ impl Plugin for VNPlugin {
             .init_resource::<DialogHistory>()
             .init_resource::<ChoiceState>()
             .init_resource::<ActiveTransition>()
-            .init_resource::<DialogManager>() // ใหม่
+            .init_resource::<DialogManager>()
 
             // Event registration
-            .add_event::<StageChangeEvent>() // ใหม่
-            .add_event::<DialogResetEvent>() // ใหม่
+            .add_event::<StageChangeEvent>()
+            .add_event::<DialogResetEvent>()
 
             // Startup systems
             .add_systems(Startup, (
@@ -39,37 +39,34 @@ impl Plugin for VNPlugin {
                 load_dialogs,
             ))
 
-            // Update systems - จัดลำดับใหม่เพื่อความชัดเจน
+            // Update systems - จัดลำดับและลด logging
             .add_systems(Update, (
                 // === Phase 1: Asset Loading & Setup ===
                 setup_characters,
                 check_character_assets,
+                check_asset_loading, // ระบบใหม่สำหรับตรวจสอบ asset loading
 
                 // === Phase 2: Core Dialog Management ===
-                // ระบบหลักสำหรับจัดการ dialog state - ต้องทำงานก่อนทุกอย่าง
                 manage_dialog_state
                     .after(setup_characters)
                     .before(handle_text_interaction)
                     .before(manage_choice_display),
 
-                // Typewriter effect
                 typewriter_system
                     .after(manage_dialog_state),
 
                 // === Phase 3: User Input Handling ===
-                // การจัดการ input ต่างๆ
                 handle_text_interaction
                     .after(manage_dialog_state)
-                    .before(handle_choice_selection), // ต้องทำก่อน choice selection
+                    .before(handle_choice_selection),
 
                 handle_language_toggle
                     .after(manage_dialog_state),
 
                 // === Phase 4: Choice Management ===
-                // การจัดการตัวเลือก
                 manage_choice_display
                     .after(manage_dialog_state)
-                    .after(typewriter_system), // ต้องรอให้ typewriter ทำงานเสร็จก่อน
+                    .after(typewriter_system),
 
                 highlight_choice_button
                     .after(manage_choice_display),
@@ -79,7 +76,6 @@ impl Plugin for VNPlugin {
                     .after(highlight_choice_button),
 
                 // === Phase 5: Visual Updates ===
-                // การอัพเดทส่วน visual ต่างๆ
                 update_characters
                     .after(manage_dialog_state)
                     .after(setup_characters),

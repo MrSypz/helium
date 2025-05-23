@@ -10,7 +10,7 @@ pub struct ChoiceButton {
     pub target_stage: usize,
 }
 
-/// สถานะการแสดงตัวเลือก - ปรับปรุงแล้ว
+/// สถานะการแสดงตัวเลือก - ลด logging
 #[derive(Resource, Default)]
 pub struct ChoiceState {
     pub active: bool,
@@ -35,14 +35,16 @@ impl ChoiceState {
     pub fn activate(&mut self, choices: Vec<DialogChoice>) {
         self.active = true;
         self.choices = choices;
-        info!("เปิดใช้งานตัวเลือก {} ทางเลือก", self.choices.len());
+        info!("แสดงตัวเลือก {} ทางเลือก", self.choices.len());
     }
 
     /// ปิดการใช้งานตัวเลือก
     pub fn deactivate(&mut self) {
-        self.active = false;
-        self.choices.clear();
-        info!("ปิดการใช้งานตัวเลือก");
+        if self.active {
+            self.active = false;
+            self.choices.clear();
+            info!("ปิดการใช้งานตัวเลือก");
+        }
     }
 }
 
