@@ -44,13 +44,28 @@ impl DialogHistory {
     }
 }
 
-/// Resource สำหรับสถานะของ Visual Novel
+/// Event สำหรับการเปลี่ยน stage
+#[derive(Event)]
+pub struct StageChangeEvent {
+    pub new_stage: usize,
+    pub scene_name: Option<String>,
+}
+
+/// Event สำหรับการรีเซ็ต dialog
+#[derive(Event)]
+pub struct DialogResetEvent;
+
+/// Resource สำหรับสถานะของ Visual Novel - ปรับปรุงแล้ว
 #[derive(Resource)]
 pub struct VNState {
     pub stage: usize,
     pub language: String,
     pub current_scene: String,
     pub current_scene_handle: Option<Handle<DialogScene>>,
+    /// เพิ่ม flag เพื่อบอกว่า stage เปลี่ยนแปลงแล้ว
+    pub stage_changed: bool,
+    /// เพิ่ม flag เพื่อบอกว่าต้องรีเซ็ต dialog
+    pub dialog_needs_reset: bool,
 }
 
 impl Default for VNState {
@@ -60,11 +75,45 @@ impl Default for VNState {
             language: "thai".to_string(),
             current_scene: "intro".to_string(),
             current_scene_handle: None,
+            stage_changed: false,
+            dialog_needs_reset: true, // เริ่มต้นต้องรีเซ็ต
         }
     }
 }
 
-/// Resource สำหรับเก็บและจัดการ Dialog Scenes
+impl VNState {
+    /// เปลี่ยน stage และทำเครื่องหมายว่าต้องรีเซ็ต dialog
+    pub fn change_stage(&mut self, new_stage: usize) {
+        if self.stage != new_stage {
+            self.stage = new_stage;
+            self.stage_changed = true;
+            self.dialog_needs_reset = true;
+            info!("เปลี่ยน stage ไปที่: {}", new_stage);
+        }
+    }
+
+    /// เปลี่ยนภาษาและทำเครื่องหมายว่าต้องรีเซ็ต dialog
+    pub fn change_language(&mut self, new_language: String) {
+        if self.language != new_language {
+            self.language = new_language;
+            self.dialog_needs_reset = true;
+            info!("เปลี่ยนภาษาเป็น: {}", self.language);
+        }
+    }
+
+    /// ทำเครื่องหมายว่า dialog ได้รีเซ็ตแล้ว
+    pub fn mark_dialog_reset(&mut self) {
+        self.stage_changed = false;
+        self.dialog_needs_reset = false;
+    }
+
+    /// ตรวจสอบว่าต้องรีเซ็ต dialog หรือไม่
+    pub fn should_reset_dialog(&self) -> bool {
+        self.dialog_needs_reset
+    }
+}
+
+/// Resource สำหรับเก็บและจัดการ Dialog Scenes - ปรับปรุงแล้ว
 #[derive(Resource, Default)]
 pub struct DialogResource {
     pub scenes: HashMap<String, Handle<DialogScene>>,
@@ -78,10 +127,39 @@ impl DialogResource {
             self.current_scene = Some(handle.clone());
             vn_state.current_scene = scene_name.to_string();
             vn_state.current_scene_handle = Some(handle.clone());
-            vn_state.stage = 0;
+            vn_state.change_stage(0); // รีเซ็ต stage เป็น 0 และทำเครื่องหมายให้รีเซ็ต dialog
             true
         } else {
             false
         }
+    }
+}
+
+/// Central Dialog Manager สำหรับจัดการ dialog state - ใหม่
+#[derive(Resource, Default)]
+pub struct DialogManager {
+    pub current_character_name: String,
+    pub current_dialog_text: String,
+    pub is_processing_stage_change: bool,
+}
+
+impl DialogManager {
+    /// รีเซ็ต dialog text และชื่อตัวละคร
+    pub fn reset(&mut self) {
+        self.current_character_name.clear();
+        self.current_dialog_text.clear();
+        self.is_processing_stage_change = true;
+    }
+
+    /// ตั้งค่า dialog content ใหม่
+    pub fn set_content(&mut self, character_name: String, dialog_text: String) {
+        self.current_character_name = character_name;
+        self.current_dialog_text = dialog_text;
+        self.is_processing_stage_change = false;
+    }
+
+    /// ตรวจสอบว่ากำลังประมวลผลการเปลี่ยน stage หรือไม่
+    pub fn is_processing(&self) -> bool {
+        self.is_processing_stage_change
     }
 }
