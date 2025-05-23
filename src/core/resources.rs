@@ -46,10 +46,11 @@ pub struct StageChangeEvent {
 #[derive(Event)]
 pub struct DialogResetEvent;
 
+/// VNState ที่ใช้ language system ใหม่
 #[derive(Resource)]
 pub struct VNState {
     pub stage: usize,
-    pub language: String,
+    pub language: String, // ยังคงใช้ string เพื่อ backward compatibility
     pub current_scene: String,
     pub current_scene_handle: Option<Handle<DialogScene>>,
     pub stage_changed: bool,
@@ -60,7 +61,7 @@ impl Default for VNState {
     fn default() -> Self {
         Self {
             stage: 0,
-            language: "thai".to_string(),
+            language: "thai".to_string(), // default ไทย
             current_scene: "intro".to_string(),
             current_scene_handle: None,
             stage_changed: false,
@@ -78,11 +79,22 @@ impl VNState {
         }
     }
 
+    /// เปลี่ยนภาษาและแจ้ง dialog ว่าต้องรีเซ็ต
     pub fn change_language(&mut self, new_language: String) {
         if self.language != new_language {
             self.language = new_language;
             self.dialog_needs_reset = true;
         }
+    }
+
+    /// สำหรับ sync กับ language system
+    pub fn sync_with_language_system(&mut self, language_code: &crate::core::language::types::LanguageCode) {
+        let lang_str = match language_code {
+            crate::core::language::types::LanguageCode::Thai => "thai",
+            crate::core::language::types::LanguageCode::English => "english",
+            crate::core::language::types::LanguageCode::Japanese => "japanese",
+        };
+        self.change_language(lang_str.to_string());
     }
 
     pub fn mark_dialog_reset(&mut self) {

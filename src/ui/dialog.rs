@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use crate::core::resources::{DialogHistory, DialogResource, VNState};
 use crate::core::dialog::choice::ChoiceState;
 use crate::core::dialog::typewriter::TypewriterText;
+use crate::core::language::manager::{LanguageResource, LanguageChangeEvent, get_text};
+use crate::core::language::types::LanguagePack;
 use crate::util::input;
 use crate::types::DialogScene;
 
@@ -26,7 +28,12 @@ const NAME_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 const DIALOG_BG_COLOR: Color = Color::srgba(0.05, 0.05, 0.1, 0.85);
 const DIALOG_BORDER_COLOR: Color = Color::srgba(0.3, 0.3, 0.5, 0.5);
 
-pub fn setup_dialog_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_dialog_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    language_resource: Res<LanguageResource>,
+    language_packs: Res<Assets<LanguagePack>>,
+) {
     let regular_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
     let bold_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
 
@@ -120,7 +127,21 @@ pub fn setup_dialog_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..default()
                 },
                 DialogControls,
-            ));
+            )).with_children(|controls| {
+                // Language indicator
+                controls.spawn((
+                    TextBundle::from_section(
+                        get_text(&language_resource, &language_packs, "dialog.language_indicator"),
+                        TextStyle {
+                            font: bold_font.clone(),
+                            font_size: 24.0,
+                            color: Color::srgba(0.8, 0.8, 0.9, 0.8),
+                        },
+                    ),
+                    LanguageIndicator,
+                    Name::new("language_indicator"),
+                ));
+            });
         });
 }
 
@@ -200,26 +221,16 @@ fn process_stage_progression(
     }
 }
 
-pub fn handle_language_toggle(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut state: ResMut<VNState>,
-    mut language_query: Query<&mut Text, With<LanguageIndicator>>,
+/// จัดการการเปลี่ยนภาษาในโหมด dialog (แยกจาก global)
+pub fn handle_language_toggle_dialog(
+    mut language_events: EventReader<LanguageChangeEvent>,
+    language_resource: Res<LanguageResource>,
+    language_packs: Res<Assets<LanguagePack>>,
+    mut language_indicator_query: Query<&mut Text, With<LanguageIndicator>>,
 ) {
-    if let Some(_) = input::detect_key_press(&keyboard, &[KeyCode::KeyL]) {
-        let new_language = if state.language == "thai" {
-            "english".to_string()
-        } else {
-            "thai".to_string()
-        };
-
-        state.change_language(new_language);
-
-        if let Ok(mut lang_text) = language_query.get_single_mut() {
-            lang_text.sections[0].value = if state.language == "thai" {
-                "TH".to_string()
-            } else {
-                "EN".to_string()
-            };
+    for _event in language_events.read() {
+        if let Ok(mut text) = language_indicator_query.get_single_mut() {
+            text.sections[0].value = get_text(&language_resource, &language_packs, "dialog.language_indicator");
         }
     }
 }

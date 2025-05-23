@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use crate::core::resources::VNState;
 use crate::core::dialog::choice::{ChoiceState, ChoiceButton};
 use crate::core::dialog::typewriter::TypewriterText;
+use crate::core::language::manager::{LanguageResource, get_text};
+use crate::core::language::types::LanguagePack;
 use crate::ui::dialog::DialogText;
 use crate::types::{DialogScene, DialogChoice};
 
@@ -29,6 +31,8 @@ pub fn manage_choice_display(
     asset_server: Res<AssetServer>,
     state: Res<VNState>,
     dialog_scenes: Res<Assets<DialogScene>>,
+    language_resource: Res<LanguageResource>,
+    language_packs: Res<Assets<LanguagePack>>,
     mut choice_state: ResMut<ChoiceState>,
     existing_containers: Query<Entity, With<ChoiceContainer>>,
     existing_overlays: Query<Entity, With<ChoiceOverlay>>,
@@ -40,7 +44,14 @@ pub fn manage_choice_display(
         if let Some(choices) = get_current_choices(&state, &dialog_scenes) {
             cleanup_existing_choices(&mut commands, &existing_containers, &existing_overlays);
             choice_state.activate(choices.clone());
-            create_choice_ui(&mut commands, &asset_server, &state, &choices);
+            create_choice_ui(
+                &mut commands,
+                &asset_server,
+                &state,
+                &language_resource,
+                &language_packs,
+                &choices
+            );
         }
     } else if !should_show_choices && choice_state.active {
         choice_state.deactivate();
@@ -104,6 +115,8 @@ fn create_choice_ui(
     commands: &mut Commands,
     asset_server: &AssetServer,
     state: &VNState,
+    language_resource: &LanguageResource,
+    language_packs: &Assets<LanguagePack>,
     choices: &[DialogChoice],
 ) {
     commands.spawn((
@@ -145,9 +158,10 @@ fn create_choice_ui(
         Name::new("choice_container"),
         ChoiceContainer,
     )).with_children(|parent| {
+        // Title - ใช้ language system
         parent.spawn((
             TextBundle::from_section(
-                if state.language == "thai" { "เลือกการกระทำของคุณ" } else { "Choose your action" },
+                get_text(language_resource, language_packs, "dialog.choose_action"),
                 TextStyle {
                     font: asset_server.load("fonts/NotoSansThai-Bold.ttf"),
                     font_size: 32.0,
@@ -174,9 +188,17 @@ fn create_choice_button(
     index: usize,
     choice: &DialogChoice,
 ) {
-    let choice_text = choice.text.get(&state.language)
+    // ใช้ current language จาก state.language แทน hardcode
+    let current_lang = match state.language.as_str() {
+        "thai" => "thai",
+        "english" => "english",
+        "japanese" => "japanese",
+        _ => "thai", // fallback
+    };
+
+    let choice_text = choice.text.get(current_lang)
         .cloned()
-        .unwrap_or_else(|| format!("[No choice text in {}]", state.language));
+        .unwrap_or_else(|| format!("[No choice text in {}]", current_lang));
 
     parent.spawn((
         ButtonBundle {

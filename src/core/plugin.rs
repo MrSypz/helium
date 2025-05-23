@@ -3,6 +3,7 @@ use crate::core::resources::*;
 use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle_state_changes, handle_pause_input};
 use crate::core::dialog::{manager::*, typewriter::*, choice::*};
 use crate::core::scene::{background::*, character::*};
+use crate::core::language::{manager::*, types::*, sync::*};
 use crate::ui::{dialog::*, choice::*, main_menu::*};
 use crate::types::{DialogScene, DialogLoader};
 
@@ -14,7 +15,9 @@ impl Plugin for VNPlugin {
             // Core systems
             .init_state::<GameState>()
             .init_asset::<DialogScene>()
+            .init_asset::<LanguagePack>()
             .init_asset_loader::<DialogLoader>()
+            .init_asset_loader::<LanguageLoader>()
 
             // Resources
             .init_resource::<VNState>()
@@ -23,19 +26,28 @@ impl Plugin for VNPlugin {
             .init_resource::<ChoiceState>()
             .init_resource::<DialogManager>()
             .init_resource::<PreviousState>()
+            .init_resource::<LanguageResource>()
 
             // Events
             .add_event::<StageChangeEvent>()
             .add_event::<DialogResetEvent>()
             .add_event::<ChangeStateEvent>()
+            .add_event::<LanguageChangeEvent>()
 
-            // Setup camera เพียงครั้งเดียวตอนเริ่มต้น
-            .add_systems(Startup, setup_global_camera)
+            // Setup camera และ language เพียงครั้งเดียวตอนเริ่มต้น
+            .add_systems(Startup, (
+                setup_global_camera,
+                load_language_packs,
+            ))
 
             // Global systems
             .add_systems(Update, (
                 handle_state_changes,
                 handle_pause_input,
+                handle_language_toggle,
+                check_language_loading,
+                sync_language_with_vn_state,
+                sync_vn_state_with_language,
             ))
 
             // Main Menu
@@ -43,6 +55,7 @@ impl Plugin for VNPlugin {
             .add_systems(Update, (
                 handle_menu_button_hover,
                 handle_menu_buttons,
+                update_main_menu_language,
             ).run_if(in_state(GameState::MainMenu)))
             .add_systems(OnExit(GameState::MainMenu), cleanup_main_menu)
 
@@ -67,7 +80,7 @@ impl Plugin for VNPlugin {
 
                 // User interactions
                 handle_text_interaction.after(manage_dialog_state),
-                handle_language_toggle.after(manage_dialog_state),
+                handle_language_toggle_dialog.after(manage_dialog_state),
 
                 // Choice system
                 manage_choice_display.after(manage_dialog_state),
