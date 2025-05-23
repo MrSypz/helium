@@ -4,8 +4,8 @@ use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle
 use crate::core::dialog::{manager::*, typewriter::*, choice::*};
 use crate::core::scene::{background::*, character::*};
 use crate::core::language::{manager::*, types::*, sync::*, fonts::*};
-use crate::ui::{dialog::*, choice::*, main_menu::*};
 use crate::types::{DialogScene, DialogLoader};
+use crate::ui::{dialog::*, choice::*, main_menu::*, settings::*};
 
 pub struct VNPlugin;
 
@@ -27,12 +27,15 @@ impl Plugin for VNPlugin {
             .init_resource::<DialogManager>()
             .init_resource::<PreviousState>()
             .init_resource::<LanguageResource>()
+            .init_resource::<SettingsResource>() // เพิ่ม SettingsResource
+            .init_resource::<ResolutionDropdownState>() // เพิ่มบรรทัดนี้
 
             // Events
             .add_event::<StageChangeEvent>()
             .add_event::<DialogResetEvent>()
             .add_event::<ChangeStateEvent>()
             .add_event::<LanguageChangeEvent>()
+            .add_event::<SettingsChangeEvent>() // เพิ่มบรรทัดนี้
 
             // Pre-startup: Setup critical resources ก่อน
             .add_systems(PreStartup, (
@@ -64,6 +67,14 @@ impl Plugin for VNPlugin {
             ).run_if(in_state(GameState::MainMenu)))
             .add_systems(OnExit(GameState::MainMenu), cleanup_main_menu)
 
+            // Settings - เพิ่ม Settings systems
+            .add_systems(OnEnter(GameState::Settings), setup_settings_ui)
+            .add_systems(Update, (
+                handle_settings_button_hover,
+                handle_settings_buttons,
+                update_settings_ui, // เปลี่ยนจาก update_settings_language
+            ).run_if(in_state(GameState::Settings)))
+            .add_systems(OnExit(GameState::Settings), cleanup_settings)
             // Loading
             .add_systems(OnEnter(GameState::Loading), setup_loading_screen)
             .add_systems(Update, handle_loading_transition.run_if(in_state(GameState::Loading)))
@@ -115,7 +126,7 @@ fn cleanup_loading_screen(
     loading_query: Query<Entity, (With<Node>, Without<Camera>)>,
 ) {
     for entity in loading_query.iter() {
-        if let Some(mut entity_commands) = commands.get_entity(entity) {
+        if let Some(entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }
@@ -126,7 +137,7 @@ fn cleanup_game_scene(
     game_entities: Query<Entity, (Without<Camera>, Without<Window>)>,
 ) {
     for entity in game_entities.iter() {
-        if let Some(mut entity_commands) = commands.get_entity(entity) {
+        if let Some(entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }

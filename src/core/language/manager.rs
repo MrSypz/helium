@@ -181,6 +181,18 @@ fn get_text_from_pack(pack: &LanguagePack, path: &str) -> String {
         ["ui", "game_subtitle"] => pack.ui.game_subtitle.clone(),
         ["ui", "controls_help"] => pack.ui.controls_help.clone(),
 
+        // สำหรับ Settings
+        ["ui", "settings_title"] => pack.ui.settings_title.clone(),
+        ["ui", "language_setting"] => pack.ui.language_setting.clone(),
+        ["ui", "resolution_setting"] => pack.ui.resolution_setting.clone(),
+        ["ui", "fullscreen_setting"] => pack.ui.fullscreen_setting.clone(),
+        ["ui", "enabled"] => pack.ui.enabled.clone(),
+        ["ui", "disabled"] => pack.ui.disabled.clone(),
+        ["ui", "back"] => pack.ui.back.clone(),
+        ["ui", "apply_settings"] => pack.ui.apply_settings.clone(),
+        ["ui", "change"] => pack.ui.change.clone(),
+        ["ui", "toggle"] => pack.ui.toggle.clone(), // เพิ่มบรรทัดนี้
+
         ["dialog", "choose_action"] => pack.dialog.choose_action.clone(),
         ["dialog", "continue_hint"] => pack.dialog.continue_hint.clone(),
         ["dialog", "language_indicator"] => pack.dialog.language_indicator.clone(),

@@ -53,8 +53,8 @@ pub fn setup_main_menu(
         get_current_fonts(&language_resource, &font_res)
     } else {
         // Fallback fonts - ใช้ default Thai fonts
-        let regular = asset_server.load("fonts/NotoSansThai-Regular.ttf");
-        let bold = asset_server.load("fonts/NotoSansThai-Bold.ttf");
+        let regular = asset_server.load("fonts/thai/NotoSansThai-Regular.ttf");
+        let bold = asset_server.load("fonts/thai/NotoSansThai-Bold.ttf");
         (regular, bold)
     };
 
@@ -178,7 +178,7 @@ pub fn setup_main_menu(
 }
 
 /// ดึง fonts ตามภาษาปัจจุบัน
-fn get_current_fonts(
+pub(crate) fn get_current_fonts(
     language_resource: &LanguageResource,
     font_resource: &FontResource,
 ) -> (Handle<Font>, Handle<Font>) {

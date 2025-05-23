@@ -24,6 +24,16 @@ pub struct UiTexts {
     pub game_title: String,
     pub game_subtitle: String,
     pub controls_help: String,
+    pub settings_title: String,
+    pub language_setting: String,
+    pub resolution_setting: String,
+    pub fullscreen_setting: String,
+    pub enabled: String,
+    pub disabled: String,
+    pub back: String,
+    pub apply_settings: String,
+    pub change: String,
+    pub toggle: String, // เพิ่มบรรทัดนี้
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

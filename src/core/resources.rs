@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 use crate::types::DialogScene;
+use crate::core::language::types::LanguageCode;
 
 #[derive(Resource, Default)]
 pub struct DialogHistory {
     history: Vec<(usize, usize, usize)>,
     previous_stages: Vec<usize>,
 }
-
 impl DialogHistory {
     pub fn add_choice(&mut self, from_stage: usize, choice_index: usize, to_stage: usize) {
         self.history.push((from_stage, choice_index, to_stage));
@@ -88,11 +88,11 @@ impl VNState {
     }
 
     /// สำหรับ sync กับ language system
-    pub fn sync_with_language_system(&mut self, language_code: &crate::core::language::types::LanguageCode) {
+    pub fn sync_with_language_system(&mut self, language_code: &LanguageCode) {
         let lang_str = match language_code {
-            crate::core::language::types::LanguageCode::Thai => "thai",
-            crate::core::language::types::LanguageCode::English => "english",
-            crate::core::language::types::LanguageCode::Japanese => "japanese",
+            LanguageCode::Thai => "thai",
+            LanguageCode::English => "english",
+            LanguageCode::Japanese => "japanese",
         };
         self.change_language(lang_str.to_string());
     }
@@ -149,5 +149,48 @@ impl DialogManager {
 
     pub fn is_processing(&self) -> bool {
         self.is_processing_stage_change
+    }
+}
+#[derive(Resource)]
+pub struct SettingsResource {
+    pub language: LanguageCode,
+    pub resolution: (f32, f32),
+    pub fullscreen: bool,
+    pub changed: bool,
+}
+#[derive(Event)]
+pub struct SettingsChangeEvent;
+impl Default for SettingsResource {
+    fn default() -> Self {
+        Self {
+            language: LanguageCode::Thai,
+            resolution: (1280.0, 720.0),
+            fullscreen: false,
+            changed: false,
+        }
+    }
+}
+
+impl SettingsResource {
+    pub fn mark_changed(&mut self) {
+        self.changed = true;
+    }
+
+    pub fn clear_changed(&mut self) {
+        self.changed = false;
+    }
+
+    pub fn has_changed(&self) -> bool {
+        self.changed
+    }
+
+    pub fn load_from_file(&mut self, _path: &str) {
+        // TODO: Implement loading from file
+    }
+
+    pub fn save_to_file(&self, _path: &str) {
+        // TODO: Implement saving to file
+        info!("Settings saved: {}x{}, Fullscreen: {}, Language: {:?}",
+              self.resolution.0, self.resolution.1, self.fullscreen, self.language);
     }
 }
