@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 use crate::core::language::types::{LanguagePack, LanguageCode};
+use crate::core::resources::VNState;
 use crate::util::identifier::language;
 
 /// Language resource - จัดการภาษาทั้งหมด
@@ -10,6 +11,7 @@ pub struct LanguageResource {
     pub current_language: LanguageCode,
     pub current_pack: Option<Handle<LanguagePack>>,
     pub loaded: bool,
+    pub initialized: bool,
 }
 
 impl Default for LanguageResource {
@@ -19,6 +21,7 @@ impl Default for LanguageResource {
             current_language: LanguageCode::Thai, // default language
             current_pack: None,
             loaded: false,
+            initialized: false,
         }
     }
 }
@@ -41,6 +44,28 @@ impl LanguageResource {
             LanguageCode::Thai => LanguageCode::English,
             LanguageCode::English => LanguageCode::Japanese,
             LanguageCode::Japanese => LanguageCode::Thai,
+        }
+    }
+
+    /// ตั้งค่าภาษาเริ่มต้นจาก VNState
+    pub fn initialize_from_vn_state(&mut self, vn_state: &VNState) -> bool {
+        if self.initialized {
+            return false;
+        }
+
+        let language_code = match vn_state.language.as_str() {
+            "thai" => LanguageCode::Thai,
+            "english" => LanguageCode::English,
+            "japanese" => LanguageCode::Japanese,
+            _ => LanguageCode::Thai, // fallback
+        };
+
+        if self.change_language(language_code) {
+            self.initialized = true;
+            info!("เริ่มต้น Language System ด้วยภาษา: {:?}", self.current_language);
+            true
+        } else {
+            false
         }
     }
 }
@@ -68,12 +93,16 @@ pub fn load_language_packs(
     // ตั้งค่า default
     language_resource.current_pack = Some(thai_pack);
     language_resource.loaded = true;
+
+    info!("โหลด Language Packs เสร็จแล้ว");
 }
 
-/// ตรวจสอบว่า language packs โหลดเสร็จแล้ว
+/// ตรวจสอบว่า language packs โหลดเสร็จแล้ว และ initialize
 pub fn check_language_loading(
     asset_server: Res<AssetServer>,
-    language_resource: Res<LanguageResource>,
+    mut language_resource: ResMut<LanguageResource>,
+    vn_state: Res<VNState>,
+    mut language_events: EventWriter<LanguageChangeEvent>,
     mut loading_complete: Local<bool>,
 ) {
     if *loading_complete || !language_resource.loaded {
@@ -95,8 +124,16 @@ pub fn check_language_loading(
     }
 
     if all_loaded {
-        info!("โหลด language packs เสร็จแล้ว");
         *loading_complete = true;
+
+        // Initialize language จาก VNState
+        if language_resource.initialize_from_vn_state(&vn_state) {
+            language_events.send(LanguageChangeEvent {
+                new_language: language_resource.current_language.clone(),
+            });
+        }
+
+        info!("Language System พร้อมใช้งาน");
     }
 }
 
@@ -109,6 +146,7 @@ pub fn handle_language_toggle(
     if keyboard.just_pressed(KeyCode::KeyL) {
         let new_language = language_resource.next_language();
         if language_resource.change_language(new_language.clone()) {
+            info!("เปลี่ยนภาษาเป็น: {:?}", new_language);
             language_events.send(LanguageChangeEvent { new_language });
         }
     }

@@ -3,7 +3,7 @@ use crate::core::resources::*;
 use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle_state_changes, handle_pause_input};
 use crate::core::dialog::{manager::*, typewriter::*, choice::*};
 use crate::core::scene::{background::*, character::*};
-use crate::core::language::{manager::*, types::*, sync::*};
+use crate::core::language::{manager::*, types::*, sync::*, fonts::*};
 use crate::ui::{dialog::*, choice::*, main_menu::*};
 use crate::types::{DialogScene, DialogLoader};
 
@@ -34,7 +34,12 @@ impl Plugin for VNPlugin {
             .add_event::<ChangeStateEvent>()
             .add_event::<LanguageChangeEvent>()
 
-            // Setup camera และ language เพียงครั้งเดียวตอนเริ่มต้น
+            // Pre-startup: Setup critical resources ก่อน
+            .add_systems(PreStartup, (
+                setup_fonts,
+            ))
+
+            // Startup: Setup camera และ language
             .add_systems(Startup, (
                 setup_global_camera,
                 load_language_packs,
@@ -110,7 +115,7 @@ fn cleanup_loading_screen(
     loading_query: Query<Entity, (With<Node>, Without<Camera>)>,
 ) {
     for entity in loading_query.iter() {
-        if let Some(entity_commands) = commands.get_entity(entity) {
+        if let Some(mut entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }
@@ -121,7 +126,7 @@ fn cleanup_game_scene(
     game_entities: Query<Entity, (Without<Camera>, Without<Window>)>,
 ) {
     for entity in game_entities.iter() {
-        if let Some(entity_commands) = commands.get_entity(entity) {
+        if let Some(mut entity_commands) = commands.get_entity(entity) {
             entity_commands.despawn_recursive();
         }
     }

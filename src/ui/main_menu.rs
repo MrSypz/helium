@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::core::game_state::{GameState, ChangeStateEvent};
 use crate::core::language::manager::{LanguageResource, LanguageChangeEvent, get_text};
 use crate::core::language::types::LanguagePack;
+use crate::core::language::fonts::FontResource;
 
 #[derive(Component)]
 pub struct MainMenuUI;
@@ -24,7 +25,7 @@ pub struct GameSubtitle;
 #[derive(Component)]
 pub struct ControlsHelp;
 
-// เพิ่ม Component สำหรับระบุ button text
+// Component สำหรับระบุ button text
 #[derive(Component)]
 pub struct StartGameButtonText;
 
@@ -45,9 +46,17 @@ pub fn setup_main_menu(
     asset_server: Res<AssetServer>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
+    font_resource: Option<Res<FontResource>>,
 ) {
-    let title_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
-    let button_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
+    // ใช้ fallback fonts ถ้า FontResource ยังไม่พร้อม
+    let (regular_font, bold_font) = if let Some(font_res) = font_resource {
+        get_current_fonts(&language_resource, &font_res)
+    } else {
+        // Fallback fonts - ใช้ default Thai fonts
+        let regular = asset_server.load("fonts/NotoSansThai-Regular.ttf");
+        let bold = asset_server.load("fonts/NotoSansThai-Bold.ttf");
+        (regular, bold)
+    };
 
     commands.spawn((
         NodeBundle {
@@ -85,7 +94,7 @@ pub fn setup_main_menu(
             TextBundle::from_section(
                 get_text(&language_resource, &language_packs, "ui.game_title"),
                 TextStyle {
-                    font: title_font.clone(),
+                    font: bold_font.clone(),
                     font_size: 64.0,
                     color: TITLE_COLOR,
                 },
@@ -102,7 +111,7 @@ pub fn setup_main_menu(
             TextBundle::from_section(
                 get_text(&language_resource, &language_packs, "ui.game_subtitle"),
                 TextStyle {
-                    font: button_font.clone(),
+                    font: regular_font.clone(),
                     font_size: 28.0,
                     color: Color::srgba(0.8, 0.8, 0.9, 0.8),
                 },
@@ -117,7 +126,7 @@ pub fn setup_main_menu(
         // Start Game Button
         create_menu_button(
             parent,
-            &button_font,
+            &regular_font,
             &get_text(&language_resource, &language_packs, "ui.start_game"),
             StartGameButton,
             StartGameButtonText,
@@ -126,7 +135,7 @@ pub fn setup_main_menu(
         // Settings Button
         create_menu_button(
             parent,
-            &button_font,
+            &regular_font,
             &get_text(&language_resource, &language_packs, "ui.settings"),
             SettingsButton,
             SettingsButtonText,
@@ -135,7 +144,7 @@ pub fn setup_main_menu(
         // Exit Game Button
         create_menu_button(
             parent,
-            &button_font,
+            &regular_font,
             &get_text(&language_resource, &language_packs, "ui.exit_game"),
             ExitGameButton,
             ExitGameButtonText,
@@ -157,7 +166,7 @@ pub fn setup_main_menu(
                 TextBundle::from_section(
                     get_text(&language_resource, &language_packs, "ui.controls_help"),
                     TextStyle {
-                        font: button_font.clone(),
+                        font: regular_font.clone(),
                         font_size: 18.0,
                         color: Color::srgba(0.7, 0.7, 0.8, 0.7),
                     },
@@ -166,6 +175,32 @@ pub fn setup_main_menu(
             ));
         });
     });
+}
+
+/// ดึง fonts ตามภาษาปัจจุบัน
+fn get_current_fonts(
+    language_resource: &LanguageResource,
+    font_resource: &FontResource,
+) -> (Handle<Font>, Handle<Font>) {
+    let regular_font = font_resource.get_regular_font(&language_resource.current_language);
+    let bold_font = font_resource.get_bold_font(&language_resource.current_language);
+    (regular_font, bold_font)
+}
+
+/// Safe version ที่รองรับ fallback fonts
+fn get_safe_fonts(
+    language_resource: &LanguageResource,
+    font_resource: Option<&FontResource>,
+    asset_server: &AssetServer,
+) -> (Handle<Font>, Handle<Font>) {
+    if let Some(font_res) = font_resource {
+        get_current_fonts(language_resource, font_res)
+    } else {
+        // Fallback fonts
+        let regular = asset_server.load("fonts/NotoSansThai-Regular.ttf");
+        let bold = asset_server.load("fonts/NotoSansThai-Bold.ttf");
+        (regular, bold)
+    }
 }
 
 fn create_menu_button<T: Component, U: Component>(
@@ -208,11 +243,13 @@ fn create_menu_button<T: Component, U: Component>(
     });
 }
 
-/// Update menu text เมื่อเปลี่ยนภาษา - แก้ไข Query Conflict
+/// Update menu text และ fonts เมื่อเปลี่ยนภาษา
 pub fn update_main_menu_language(
     mut language_events: EventReader<LanguageChangeEvent>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
+    font_resource: Option<Res<FontResource>>,
+    asset_server: Res<AssetServer>,
     mut text_query: Query<&mut Text>,
     title_query: Query<Entity, With<GameTitle>>,
     subtitle_query: Query<Entity, With<GameSubtitle>>,
@@ -222,10 +259,18 @@ pub fn update_main_menu_language(
     exit_button_text_query: Query<Entity, With<ExitGameButtonText>>,
 ) {
     for _event in language_events.read() {
+        // ดึง fonts ใหม่ตามภาษาปัจจุบัน (safe version)
+        let (regular_font, bold_font) = get_safe_fonts(
+            &language_resource,
+            font_resource.as_deref(),
+            &asset_server
+        );
+
         // Update title
         if let Ok(entity) = title_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.game_title");
+                text.sections[0].style.font = bold_font.clone();
             }
         }
 
@@ -233,6 +278,7 @@ pub fn update_main_menu_language(
         if let Ok(entity) = subtitle_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.game_subtitle");
+                text.sections[0].style.font = regular_font.clone();
             }
         }
 
@@ -240,6 +286,7 @@ pub fn update_main_menu_language(
         if let Ok(entity) = controls_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.controls_help");
+                text.sections[0].style.font = regular_font.clone();
             }
         }
 
@@ -247,6 +294,7 @@ pub fn update_main_menu_language(
         if let Ok(entity) = start_button_text_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.start_game");
+                text.sections[0].style.font = regular_font.clone();
             }
         }
 
@@ -254,6 +302,7 @@ pub fn update_main_menu_language(
         if let Ok(entity) = settings_button_text_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.settings");
+                text.sections[0].style.font = regular_font.clone();
             }
         }
 
@@ -261,6 +310,7 @@ pub fn update_main_menu_language(
         if let Ok(entity) = exit_button_text_query.get_single() {
             if let Ok(mut text) = text_query.get_mut(entity) {
                 text.sections[0].value = get_text(&language_resource, &language_packs, "ui.exit_game");
+                text.sections[0].style.font = regular_font.clone();
             }
         }
     }
@@ -331,8 +381,13 @@ pub fn setup_loading_screen(
     asset_server: Res<AssetServer>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
+    font_resource: Option<Res<FontResource>>,
 ) {
-    let font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
+    let (regular_font, bold_font) = get_safe_fonts(
+        &language_resource,
+        font_resource.as_deref(),
+        &asset_server
+    );
 
     commands.spawn((
         NodeBundle {
@@ -352,7 +407,7 @@ pub fn setup_loading_screen(
         parent.spawn(TextBundle::from_section(
             get_text(&language_resource, &language_packs, "ui.loading"),
             TextStyle {
-                font: font.clone(),
+                font: bold_font.clone(),
                 font_size: 48.0,
                 color: Color::WHITE,
             },
@@ -362,7 +417,7 @@ pub fn setup_loading_screen(
             TextBundle::from_section(
                 get_text(&language_resource, &language_packs, "ui.loading_subtitle"),
                 TextStyle {
-                    font: font,
+                    font: regular_font,
                     font_size: 24.0,
                     color: Color::srgba(0.8, 0.8, 0.8, 0.8),
                 },
