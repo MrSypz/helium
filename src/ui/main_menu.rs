@@ -1,47 +1,36 @@
-// src/client/render/ui/main_menu.rs
 use bevy::prelude::*;
-use crate::common::game_state::{GameState, ChangeStateEvent};
+use crate::core::game_state::{GameState, ChangeStateEvent};
 
-/// Component สำหรับเมนูหลัก
 #[derive(Component)]
 pub struct MainMenuUI;
 
-/// Component สำหรับปุ่มเริ่มเกม
 #[derive(Component)]
 pub struct StartGameButton;
 
-/// Component สำหรับปุ่มตั้งค่า
 #[derive(Component)]
 pub struct SettingsButton;
 
-/// Component สำหรับปุ่มออกจากเกม
 #[derive(Component)]
 pub struct ExitGameButton;
 
-/// Component สำหรับชื่อเกม
 #[derive(Component)]
 pub struct GameTitle;
 
-// Constants สำหรับ UI
 const MENU_BUTTON_COLOR: Color = Color::srgba(0.2, 0.2, 0.3, 0.9);
 const MENU_BUTTON_HOVER: Color = Color::srgba(0.3, 0.3, 0.4, 0.9);
 const MENU_BUTTON_PRESSED: Color = Color::srgba(0.4, 0.4, 0.5, 0.9);
 const MENU_TEXT_COLOR: Color = Color::WHITE;
 const TITLE_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 
-/// ระบบสำหรับสร้างเมนูหลัก
 pub fn setup_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    info!("สร้างเมนูหลัก");
     commands.spawn(Camera2dBundle::default());
 
-    // โหลดฟอนต์
     let title_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
     let button_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
 
-    // สร้าง background gradient
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -57,7 +46,6 @@ pub fn setup_main_menu(
         Name::new("menu_background"),
     ));
 
-    // Container หลักของเมนู
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -74,7 +62,6 @@ pub fn setup_main_menu(
         MainMenuUI,
         Name::new("menu_container"),
     )).with_children(|parent| {
-        // ชื่อเกม
         parent.spawn((
             TextBundle::from_section(
                 "Helium Visual Novel",
@@ -91,7 +78,6 @@ pub fn setup_main_menu(
             Name::new("game_title"),
         ));
 
-        // คำบรรยายใต้ชื่อ
         parent.spawn((
             TextBundle::from_section(
                 "เริ่มต้นการผจญภัยครั้งใหม่ของคุณ",
@@ -107,16 +93,10 @@ pub fn setup_main_menu(
             Name::new("game_subtitle"),
         ));
 
-        // ปุ่มเริ่มเกม
         create_menu_button(parent, &button_font, "เริ่มเกม", "Start Game", StartGameButton);
-
-        // ปุ่มตั้งค่า
         create_menu_button(parent, &button_font, "ตั้งค่า", "Settings", SettingsButton);
-
-        // ปุ่มออกจากเกม
         create_menu_button(parent, &button_font, "ออกจากเกม", "Exit Game", ExitGameButton);
 
-        // คำแนะนำการใช้งาน
         parent.spawn((
             NodeBundle {
                 style: Style {
@@ -140,7 +120,6 @@ pub fn setup_main_menu(
     });
 }
 
-/// สร้างปุ่มเมนู
 fn create_menu_button<T: Component>(
     parent: &mut ChildBuilder,
     font: &Handle<Font>,
@@ -178,7 +157,6 @@ fn create_menu_button<T: Component>(
     });
 }
 
-/// ระบบจัดการ hover effect ของปุ่ม
 pub fn handle_menu_button_hover(
     mut button_query: Query<
         (&Interaction, &mut BackgroundColor),
@@ -200,7 +178,6 @@ pub fn handle_menu_button_hover(
     }
 }
 
-/// ระบบจัดการการคลิกปุ่มเมนู
 pub fn handle_menu_buttons(
     start_query: Query<&Interaction, (Changed<Interaction>, With<StartGameButton>)>,
     settings_query: Query<&Interaction, (Changed<Interaction>, With<SettingsButton>)>,
@@ -208,36 +185,29 @@ pub fn handle_menu_buttons(
     mut change_events: EventWriter<ChangeStateEvent>,
     mut exit: EventWriter<AppExit>,
 ) {
-    // ปุ่มเริ่มเกม
     for interaction in start_query.iter() {
         if *interaction == Interaction::Pressed {
-            info!("กดปุ่มเริ่มเกม");
             change_events.send(ChangeStateEvent {
                 new_state: GameState::Loading,
             });
         }
     }
 
-    // ปุ่มตั้งค่า
     for interaction in settings_query.iter() {
         if *interaction == Interaction::Pressed {
-            info!("กดปุ่มตั้งค่า");
             change_events.send(ChangeStateEvent {
                 new_state: GameState::Settings,
             });
         }
     }
 
-    // ปุ่มออกจากเกม
     for interaction in exit_query.iter() {
         if *interaction == Interaction::Pressed {
-            info!("กดปุ่มออกจากเกม");
             exit.send(AppExit::Success);
         }
     }
 }
 
-/// ระบบลบเมนูหลักเมื่อออกจากสถานะ MainMenu
 pub fn cleanup_main_menu(
     mut commands: Commands,
     menu_query: Query<Entity, With<MainMenuUI>>,
@@ -245,10 +215,8 @@ pub fn cleanup_main_menu(
     for entity in menu_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
-    info!("ลบเมนูหลักแล้ว");
 }
 
-/// ระบบแสดง loading screen
 pub fn setup_loading_screen(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -295,27 +263,23 @@ pub fn setup_loading_screen(
     });
 }
 
-/// ระบบจำลองการโหลดและเปลี่ยนไปเกม
 pub fn handle_loading_transition(
     mut timer: Local<Option<Timer>>,
     time: Res<Time>,
     mut change_events: EventWriter<ChangeStateEvent>,
 ) {
-    // สร้าง timer ครั้งแรกที่เข้า loading state
     if timer.is_none() {
         *timer = Some(Timer::from_seconds(2.0, TimerMode::Once));
-        info!("เริ่มการโหลด");
     }
 
     if let Some(ref mut loading_timer) = timer.as_mut() {
         loading_timer.tick(time.delta());
 
         if loading_timer.finished() {
-            info!("โหลดเสร็จแล้ว เริ่มเกม");
             change_events.send(ChangeStateEvent {
                 new_state: GameState::InGame,
             });
-            *timer = None; // รีเซ็ต timer สำหรับครั้งถัดไป
+            *timer = None;
         }
     }
 }

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-/// Component สำหรับ Typewriter effect
 #[derive(Component)]
 pub struct TypewriterText {
     pub full_text: String,
@@ -20,7 +19,6 @@ impl TypewriterText {
     }
 }
 
-/// ระบบสำหรับจัดการ Typewriter Effect
 pub fn typewriter_system(
     time: Res<Time>,
     mut query: Query<(&mut Text, &mut TypewriterText)>,

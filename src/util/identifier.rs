@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-/// Utility สำหรับการโหลด Asset
 #[derive(Clone)]
 pub struct Identifier {
     path: String,

@@ -1,3 +1,4 @@
-pub mod common;
-pub mod client;
+pub mod core;
+pub mod ui;
 pub mod util;
+pub mod types;
