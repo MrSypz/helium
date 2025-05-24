@@ -148,7 +148,6 @@ pub fn handle_text_interaction(
     mut dialog_query: Query<(&mut Text, &mut TypewriterText), With<DialogText>>,
     current_state: Res<State<GameState>>,
 ) {
-    // ไม่ทำงานเมื่อไม่ได้อยู่ใน InGame state
     if *current_state.get() != GameState::InGame {
         return;
     }
@@ -227,7 +226,6 @@ pub fn update_dialog_fonts(
     mut dialog_text_query: Query<&mut Text, (With<DialogText>, Without<CharacterName>)>,
 ) {
     for _event in language_events.read() {
-        // Update character name font
         for mut text in character_name_query.iter_mut() {
             if !text.sections.is_empty() {
                 text.sections[0].style = TextStylePreset::DialogName.to_style(&text_styles, &language_resource.current_language);

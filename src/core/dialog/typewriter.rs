@@ -18,22 +18,3 @@ impl TypewriterText {
         }
     }
 }
-
-pub fn typewriter_system(
-    time: Res<Time>,
-    mut query: Query<(&mut Text, &mut TypewriterText)>,
-) {
-    for (mut text, mut typewriter) in query.iter_mut() {
-        if typewriter.char_index < typewriter.full_text.chars().count() {
-            typewriter.timer.tick(time.delta());
-
-            if typewriter.timer.just_finished() {
-                if let Some(next_char) = typewriter.full_text.chars().nth(typewriter.char_index) {
-                    typewriter.current_text.push(next_char);
-                    typewriter.char_index += 1;
-                    text.sections[0].value = typewriter.current_text.clone();
-                }
-            }
-        }
-    }
-}

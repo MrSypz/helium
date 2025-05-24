@@ -225,7 +225,6 @@ fn load_dialogs_if_needed(
     dialog_resource: ResMut<DialogResource>,
     vn_state: ResMut<VNState>,
 ) {
-    // Load เฉพาะเมื่อยังไม่ได้ load
     if dialog_resource.scenes.is_empty() {
         load_dialogs(asset_server, dialog_resource, vn_state);
     }
@@ -238,7 +237,6 @@ fn setup_scene_background_if_needed(
     state: Res<VNState>,
     existing_bg: Query<Entity, With<crate::core::scene::background::Background>>,
 ) {
-    // Setup เฉพาะเมื่อยังไม่มี background
     if existing_bg.is_empty() {
         setup_scene_background(commands, asset_server, dialog_scenes, state);
     }
