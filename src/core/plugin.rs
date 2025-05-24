@@ -1,13 +1,32 @@
-use crate::core::dialog::{choice::*, manager::*};
-use crate::core::game_state::{handle_pause_input, handle_state_changes, ChangeStateEvent, GameState, PreviousState};
-use crate::core::language::{manager::*, sync::*, types::*};
-use crate::core::resources::*;
-use crate::core::scene::{background::*, character::*};
-use crate::core::text::{builder::*, styles::*};
-use crate::types::{DialogLoader, DialogScene};
-use crate::ui::choice::{highlight_choice_button, manage_choice_display};
-use crate::ui::{dialog::*, main_menu::*, pause::*, settings::*};
 use bevy::prelude::*;
+use crate::core::resources::*;
+use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle_state_changes, handle_pause_input};
+use crate::core::dialog::{
+    manager::{load_dialogs, manage_dialog_state},
+    choice::{ChoiceState, handle_choice_selection as core_handle_choice_selection},
+};
+use crate::core::scene::{
+    background::{setup_scene_background, update_background},
+    character::{setup_characters, update_characters, check_character_assets},
+};
+use crate::core::language::{
+    manager::{load_language_packs, check_language_loading},
+    types::{LanguagePack, LanguageLoader},
+    sync::{sync_language_with_vn_state, sync_vn_state_with_language},
+};
+use crate::core::language::manager::{LanguageChangeEvent, LanguageResource};
+use crate::core::text::{
+    styles::{TextStyleResource, ensure_text_styles_initialized},
+    builder::update_localized_text,
+};
+use crate::types::{DialogScene, DialogLoader};
+use crate::ui::{
+    dialog::{setup_dialog_ui, handle_text_interaction, update_dialog_fonts, paused_typewriter_system},
+    choice::{manage_choice_display, highlight_choice_button},
+    main_menu::{setup_main_menu, handle_menu_button_hover, handle_menu_buttons, cleanup_main_menu, setup_loading_screen, handle_loading_transition},
+    settings::{setup_settings_ui, handle_settings_button_hover, handle_settings_buttons, update_settings_values, cleanup_settings, ResolutionDropdownState},
+    pause::{setup_pause_ui, handle_pause_button_hover, handle_pause_buttons, cleanup_pause_ui},
+};
 
 pub struct VNPlugin;
 
@@ -101,7 +120,7 @@ impl Plugin for VNPlugin {
                     .before(handle_text_interaction)
                     .before(manage_choice_display),
 
-                crate::ui::dialog::paused_typewriter_system.after(manage_dialog_state),
+                paused_typewriter_system.after(manage_dialog_state),
 
                 // User interactions
                 handle_text_interaction.after(manage_dialog_state),
@@ -110,7 +129,7 @@ impl Plugin for VNPlugin {
                 // Choice system
                 manage_choice_display.after(manage_dialog_state),
                 highlight_choice_button.after(manage_choice_display),
-                handle_choice_selection.after(manage_choice_display),
+                core_handle_choice_selection.after(manage_choice_display),
 
                 // Scene rendering
                 setup_characters.after(manage_dialog_state),
@@ -140,35 +159,60 @@ fn cleanup_loading_screen(
     }
 }
 
-// ระบบ cleanup ที่ตรวจสอบว่าควร cleanup หรือไม่
+// ระบบ cleanup ที่ปลอดภัยและตรวจสอบว่า entity มีอยู่จริง
 fn conditional_cleanup_game_scene(
     mut commands: Commands,
     mut change_events: EventReader<ChangeStateEvent>,
     current_state: Res<State<GameState>>,
-    game_entities: Query<Entity, (Without<Camera>, Without<Window>)>,
+    game_entities: Query<Entity, (
+        Without<Camera>,
+        Without<Window>,
+        Or<(
+            With<crate::ui::dialog::DialogBox>,
+            With<crate::core::scene::background::Background>,
+            With<crate::core::scene::character::CharacterSprite>,
+            With<crate::ui::choice::ChoiceContainer>,
+            With<crate::ui::choice::ChoiceOverlay>,
+        )>
+    )>,
+    mut cleanup_happened: Local<bool>,
 ) {
     for event in change_events.read() {
-        // cleanup เฉพาะเมื่อออกจาก InGame ไปยัง state ที่ไม่ใช่ Paused
-        if *current_state.get() == GameState::InGame &&
-            event.new_state != GameState::Paused {
-            // Cleanup game scene
+        let should_cleanup = match (current_state.get(), &event.new_state) {
+            (GameState::InGame, GameState::MainMenu) => true,
+            (GameState::InGame, GameState::Loading) => true,
+            (GameState::Paused, GameState::MainMenu) => true,
+            _ => false,
+        };
+
+        if should_cleanup && !*cleanup_happened {
+            *cleanup_happened = true;
+
+            let mut cleaned_count = 0;
+
             for entity in game_entities.iter() {
                 if let Some(entity_commands) = commands.get_entity(entity) {
                     entity_commands.despawn_recursive();
+                    cleaned_count += 1;
                 }
             }
-            info!("Cleaned up game scene when transitioning from InGame to {:?}", event.new_state);
+
+            info!("Safely cleaned up {} game entities when transitioning from {:?} to {:?}",
+                  cleaned_count, current_state.get(), event.new_state);
+        }
+
+        if event.new_state == GameState::InGame {
+            *cleanup_happened = false;
         }
     }
 }
 
-// Setup functions ที่ตรวจสอบว่ามีอยู่แล้วหรือไม่
 fn setup_dialog_ui_if_needed(
     commands: Commands,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
     text_styles: Res<TextStyleResource>,
-    existing_dialog: Query<Entity, With<DialogBox>>,
+    existing_dialog: Query<Entity, With<crate::ui::dialog::DialogBox>>,
 ) {
     // Setup เฉพาะเมื่อยังไม่มี dialog UI
     if existing_dialog.is_empty() {

@@ -22,7 +22,7 @@
     "paused_title": "Paused",
     "resume_game": "Resume",
     "main_menu": "Main Menu",
-    "pause_controls_hint": "Press ESC to resume or click buttons to choose action"
+    "pause_controls_hint": "Press ESC to resume"
   },
   "dialog": {
     "choose_action": "Choose your action",

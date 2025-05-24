@@ -1,4 +1,3 @@
-// src/ui/pause.rs
 use bevy::prelude::*;
 use crate::core::game_state::{GameState, ChangeStateEvent};
 use crate::core::language::manager::LanguageResource;
@@ -29,6 +28,7 @@ pub fn setup_pause_ui(
     language_packs: Res<Assets<LanguagePack>>,
     text_styles: Res<TextStyleResource>,
 ) {
+    // Background overlay - ใช้ z-index สูงกว่า dialog (10.0) และ choice (15.0)
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -52,13 +52,13 @@ pub fn setup_pause_ui(
         overlay.spawn((
             NodeBundle {
                 style: Style {
-                    width: Val::Px(400.0),
+                    width: Val::Px(350.0),
                     height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
                     padding: UiRect::all(Val::Px(40.0)),
-                    row_gap: Val::Px(25.0),
+                    row_gap: Val::Px(30.0),
                     ..default()
                 },
                 background_color: PAUSE_PANEL_COLOR.into(),
@@ -102,7 +102,7 @@ pub fn setup_pause_ui(
             panel.spawn((
                 NodeBundle {
                     style: Style {
-                        margin: UiRect::top(Val::Px(20.0)),
+                        margin: UiRect::top(Val::Px(15.0)),
                         ..default()
                     },
                     ..default()
@@ -132,7 +132,7 @@ fn create_pause_button<T: Component>(
     parent.spawn((
         ButtonBundle {
             style: Style {
-                width: Val::Px(280.0),
+                width: Val::Px(250.0),
                 height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -185,7 +185,7 @@ pub fn handle_pause_buttons(
     main_menu_query: Query<&Interaction, (Changed<Interaction>, With<MainMenuButton>)>,
     mut change_events: EventWriter<ChangeStateEvent>,
 ) {
-    // Resume Game
+    // Resume Game - กลับไป InGame โดยไม่ cleanup
     for interaction in resume_query.iter() {
         if *interaction == Interaction::Pressed {
             change_events.send(ChangeStateEvent {
@@ -193,7 +193,7 @@ pub fn handle_pause_buttons(
             });
         }
     }
-    // Main Menu
+    // Main Menu - ไป MainMenu พร้อม cleanup
     for interaction in main_menu_query.iter() {
         if *interaction == Interaction::Pressed {
             change_events.send(ChangeStateEvent {

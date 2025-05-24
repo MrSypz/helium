@@ -22,7 +22,7 @@
     "paused_title": "一時停止",
     "resume_game": "再開",
     "main_menu": "メインメニュー",
-    "pause_controls_hint": "ESCで再開、またはボタンをクリックして行動を選択"
+    "pause_controls_hint": "ESCで再開"
   },
   "dialog": {
     "choose_action": "行動を選択してください",
