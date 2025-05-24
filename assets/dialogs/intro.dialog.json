@@ -4,14 +4,16 @@
       "name": "narrator",
       "display_name": {
         "thai": "ผู้เล่าเรื่อง",
-        "english": "Narrator"
+        "english": "Narrator",
+        "japanese": "ナレーター"
       }
     },
     {
       "name": "player",
       "display_name": {
         "thai": "คุณ",
-        "english": "You"
+        "english": "You",
+        "japanese": "あなた"
       },
       "sprite": "characters/player.png",
       "positions": {
@@ -24,7 +26,8 @@
       "name": "unknown",
       "display_name": {
         "thai": "???",
-        "english": "???"
+        "english": "???",
+        "japanese": "？？？"
       },
       "sprite": "characters/unknown.png",
       "positions": {
@@ -40,23 +43,26 @@
       "character": "narrator",
       "text": {
         "thai": "ยินดีต้อนรับสู่โลกใหม่ของคุณ ที่ๆ ทุกการตัดสินใจมีความหมาย",
-        "english": "Welcome to your new world, where every decision matters."
+        "english": "Welcome to your new world, where every decision matters.",
+        "japanese": "あなたの新しい世界へようこそ。ここではすべての選択が重要です。"
       }
     },
     {
       "character": "narrator",
       "text": {
         "thai": "เรื่องราวของคุณกำลังจะเริ่มต้นขึ้น ณ โรงเรียนแห่งหนึ่ง...",
-        "english": "Your story is about to begin at a certain school..."
+        "english": "Your story is about to begin at a certain school...",
+        "japanese": "あなたの物語は、ある学校で始まろうとしています..."
       },
       "auto_proceed": 2,
-      "background": "backgrounds/school_exterior.jpeg"
+      "background": "backgrounds/school_exterior.png"
     },
     {
       "character": "player",
       "text": {
         "thai": "วันนี้เป็นวันแรกของการเรียน ฉันรู้สึกตื่นเต้นมาก",
-        "english": "Today is my first day of school. I'm so excited."
+        "english": "Today is my first day of school. I'm so excited.",
+        "japanese": "今日が学校の初日だ。めっちゃ楽しみ！"
       },
       "character_states": [
         {
@@ -71,7 +77,8 @@
       "character": "unknown",
       "text": {
         "thai": "เฮ้! คุณคนใหม่ใช่มั้ย? ฉันชื่อมิกิ ยินดีที่ได้รู้จัก!",
-        "english": "Hey! Are you the new student? I'm Miki, nice to meet you!"
+        "english": "Hey! Are you the new student? I'm Miki, nice to meet you!",
+        "japanese": "ねえ！ 新入生でしょ？ 私はミキ、よろしくね！"
       },
       "character_states": [
         {
@@ -92,7 +99,8 @@
       "character": "player",
       "text": {
         "thai": "อืม ใช่ครับ/ค่ะ ฉันเพิ่งย้ายมา ยินดีที่ได้รู้จักเช่นกัน",
-        "english": "Yes, I just transferred here. Nice to meet you too."
+        "english": "Yes, I just transferred here. Nice to meet you too.",
+        "japanese": "うん、そうだよ。転校してきたばかり。よろしくね。"
       },
       "character_states": [
         {
@@ -113,7 +121,8 @@
       "character": "narrator",
       "text": {
         "thai": "และนี่คือจุดเริ่มต้นของการเดินทางครั้งใหม่ของคุณ...",
-        "english": "And this is the beginning of your new journey..."
+        "english": "And this is the beginning of your new journey...",
+        "japanese": "そして、これがあなたの新しい旅の始まりです..."
       },
       "actions": ["change_scene:school"]
     }

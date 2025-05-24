@@ -2,8 +2,11 @@ use bevy::prelude::*;
 use crate::core::resources::VNState;
 use crate::core::dialog::choice::{ChoiceState, ChoiceButton};
 use crate::core::dialog::typewriter::TypewriterText;
-use crate::core::language::manager::{LanguageResource, get_text};
+use crate::core::language::manager::LanguageResource;
 use crate::core::language::types::LanguagePack;
+use crate::core::text::styles::TextStyleResource;
+use crate::core::text::components::TextStylePreset;
+use crate::core::text::builder::TextBuilder;
 use crate::ui::dialog::DialogText;
 use crate::types::{DialogScene, DialogChoice};
 
@@ -17,8 +20,6 @@ pub struct ChoiceText;
 pub struct ChoiceOverlay;
 
 const CHOICE_Z_LAYER: f32 = 15.0;
-const CHOICE_TITLE_COLOR: Color = Color::srgb(1.0, 0.85, 0.3);
-const CHOICE_TEXT_COLOR: Color = Color::WHITE;
 const CHOICE_PANEL_BG: Color = Color::srgba(0.12, 0.12, 0.18, 0.95);
 const CHOICE_BORDER_COLOR: Color = Color::srgba(0.5, 0.5, 0.7, 0.5);
 const CHOICE_BUTTON_BG: Color = Color::srgba(0.2, 0.2, 0.25, 0.9);
@@ -28,11 +29,11 @@ const CHOICE_BUTTON_ACTIVE: Color = Color::srgba(0.4, 0.4, 0.5, 1.0);
 
 pub fn manage_choice_display(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     state: Res<VNState>,
     dialog_scenes: Res<Assets<DialogScene>>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
+    text_styles: Res<TextStyleResource>,
     mut choice_state: ResMut<ChoiceState>,
     existing_containers: Query<Entity, With<ChoiceContainer>>,
     existing_overlays: Query<Entity, With<ChoiceOverlay>>,
@@ -46,10 +47,10 @@ pub fn manage_choice_display(
             choice_state.activate(choices.clone());
             create_choice_ui(
                 &mut commands,
-                &asset_server,
                 &state,
                 &language_resource,
                 &language_packs,
+                &text_styles,
                 &choices
             );
         }
@@ -113,12 +114,13 @@ fn cleanup_existing_choices(
 
 fn create_choice_ui(
     commands: &mut Commands,
-    asset_server: &AssetServer,
     state: &VNState,
     language_resource: &LanguageResource,
     language_packs: &Assets<LanguagePack>,
+    text_styles: &TextStyleResource,
     choices: &[DialogChoice],
 ) {
+    // Overlay
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -135,6 +137,7 @@ fn create_choice_ui(
         ChoiceOverlay,
     ));
 
+    // Main choice panel
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -158,42 +161,46 @@ fn create_choice_ui(
         Name::new("choice_container"),
         ChoiceContainer,
     )).with_children(|parent| {
-        // Title - ใช้ language system
+        // Title
         parent.spawn((
-            TextBundle::from_section(
-                get_text(language_resource, language_packs, "dialog.choose_action"),
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSansThai-Bold.ttf"),
-                    font_size: 32.0,
-                    color: CHOICE_TITLE_COLOR,
-                },
-            )
-                .with_style(Style {
+            NodeBundle {
+                style: Style {
                     margin: UiRect::bottom(Val::Px(20.0)),
                     ..default()
-                }),
-            Name::new("choice_title"),
-        ));
+                },
+                ..default()
+            },
+        )).with_children(|title_container| {
+            TextBuilder::localized_child(
+                title_container,
+                "dialog.choose_action",
+                TextStylePreset::Custom(32.0, true, Color::srgb(1.0, 0.85, 0.3)),
+                language_resource,
+                language_packs,
+                text_styles,
+            );
+        });
 
+        // Choice buttons
         for (i, choice) in choices.iter().enumerate() {
-            create_choice_button(parent, asset_server, state, i, choice);
+            create_choice_button(parent, state, i, choice, language_resource, text_styles);
         }
     });
 }
 
 fn create_choice_button(
     parent: &mut ChildBuilder,
-    asset_server: &AssetServer,
     state: &VNState,
     index: usize,
     choice: &DialogChoice,
+    language_resource: &LanguageResource,
+    text_styles: &TextStyleResource,
 ) {
-    // ใช้ current language จาก state.language แทน hardcode
     let current_lang = match state.language.as_str() {
         "thai" => "thai",
         "english" => "english",
         "japanese" => "japanese",
-        _ => "thai", // fallback
+        _ => "thai",
     };
 
     let choice_text = choice.text.get(current_lang)
@@ -223,6 +230,7 @@ fn create_choice_button(
         },
         Name::new(format!("choice_button_{}", index)),
     )).with_children(|button| {
+        // Number circle
         button.spawn(NodeBundle {
             style: Style {
                 width: Val::Px(30.0),
@@ -233,35 +241,30 @@ fn create_choice_button(
                 ..default()
             },
             background_color: Color::srgba(0.3, 0.3, 0.5, 0.8).into(),
+            border_radius: BorderRadius::all(Val::Px(15.0)),
             ..default()
         }).with_children(|number_circle| {
-            number_circle.spawn(TextBundle::from_section(
-                format!("{}", index + 1),
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSansThai-Bold.ttf"),
-                    font_size: 20.0,
-                    color: Color::WHITE,
-                },
-            ));
+            TextBuilder::static_child(
+                number_circle,
+                &format!("{}", index + 1),
+                TextStylePreset::Custom(20.0, true, Color::WHITE),
+                language_resource,
+                text_styles,
+            );
         });
 
-        button.spawn((
-            TextBundle::from_section(
-                choice_text,
-                TextStyle {
-                    font: asset_server.load("fonts/NotoSansThai-Regular.ttf"),
-                    font_size: 26.0,
-                    color: CHOICE_TEXT_COLOR,
-                },
-            )
-                .with_style(Style {
-                    margin: UiRect::left(Val::Px(5.0)),
-                    max_width: Val::Percent(90.0),
-                    ..default()
-                }),
-            ChoiceText,
-            Name::new(format!("choice_text_{}", index)),
-        ));
+        // Choice text
+        TextBuilder::static_child_with_components(
+            button,
+            &choice_text,
+            TextStylePreset::Custom(26.0, false, Color::WHITE),
+            language_resource,
+            text_styles,
+            (
+                ChoiceText,
+                Name::new(format!("choice_text_{}", index)),
+            ),
+        );
     });
 }
 

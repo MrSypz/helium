@@ -2,8 +2,11 @@ use bevy::prelude::*;
 use crate::core::resources::{DialogHistory, DialogResource, VNState};
 use crate::core::dialog::choice::ChoiceState;
 use crate::core::dialog::typewriter::TypewriterText;
-use crate::core::language::manager::{LanguageResource, LanguageChangeEvent, get_text};
+use crate::core::language::manager::{LanguageResource, LanguageChangeEvent};
 use crate::core::language::types::LanguagePack;
+use crate::core::text::styles::TextStyleResource;
+use crate::core::text::components::TextStylePreset;
+use crate::core::text::builder::TextBuilder;
 use crate::util::input;
 use crate::types::DialogScene;
 
@@ -23,20 +26,15 @@ pub struct DialogControls;
 pub struct LanguageIndicator;
 
 const DIALOG_Z_LAYER: f32 = 10.0;
-const TEXT_COLOR: Color = Color::WHITE;
-const NAME_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 const DIALOG_BG_COLOR: Color = Color::srgba(0.05, 0.05, 0.1, 0.85);
 const DIALOG_BORDER_COLOR: Color = Color::srgba(0.3, 0.3, 0.5, 0.5);
 
 pub fn setup_dialog_ui(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
+    text_styles: Res<TextStyleResource>,
 ) {
-    let regular_font = asset_server.load("fonts/NotoSansThai-Regular.ttf");
-    let bold_font = asset_server.load("fonts/NotoSansThai-Bold.ttf");
-
     commands
         .spawn((
             NodeBundle {
@@ -63,6 +61,7 @@ pub fn setup_dialog_ui(
             Name::new("dialog_box"),
         ))
         .with_children(|parent| {
+            // Character name container
             parent
                 .spawn((NodeBundle {
                     style: Style {
@@ -77,43 +76,37 @@ pub fn setup_dialog_ui(
                         ..default()
                     },
                     background_color: Color::srgba(0.1, 0.1, 0.2, 0.9).into(),
-                    border_color: NAME_COLOR.with_alpha(0.7).into(),
+                    border_color: Color::srgb(1.0, 0.8, 0.2).with_alpha(0.7).into(),
                     border_radius: BorderRadius::all(Val::Px(10.0)),
                     ..default()
                 },))
                 .with_children(|name_box| {
-                    name_box.spawn((
-                        TextBundle::from_section(
-                            "",
-                            TextStyle {
-                                font: bold_font.clone(),
-                                font_size: 32.0,
-                                color: NAME_COLOR,
-                            },
-                        ),
-                        CharacterName,
-                        Name::new("character_name"),
-                    ));
+                    // Character name - สร้าง text พร้อม components ในคำสั่งเดียว
+                    TextBuilder::static_child_with_components(
+                        name_box,
+                        "",
+                        TextStylePreset::DialogName,
+                        &language_resource,
+                        &text_styles,
+                        (CharacterName, Name::new("character_name")),
+                    );
                 });
 
+            // Dialog text - สร้างแยกเพื่อเพิ่ม TypewriterText
             parent.spawn((
                 TextBundle::from_section(
                     "",
-                    TextStyle {
-                        font: regular_font.clone(),
-                        font_size: 30.0,
-                        color: TEXT_COLOR,
-                    },
-                )
-                    .with_style(Style {
-                        margin: UiRect::all(Val::Px(10.0)),
-                        ..default()
-                    }),
+                    TextStylePreset::DialogText.to_style(&text_styles, &language_resource.current_language)
+                ).with_style(Style {
+                    margin: UiRect::all(Val::Px(10.0)),
+                    ..default()
+                }),
                 DialogText,
                 Name::new("dialogue"),
                 TypewriterText::new("", 0.05),
             ));
 
+            // Controls container
             parent.spawn((
                 NodeBundle {
                     style: Style {
@@ -129,18 +122,15 @@ pub fn setup_dialog_ui(
                 DialogControls,
             )).with_children(|controls| {
                 // Language indicator
-                controls.spawn((
-                    TextBundle::from_section(
-                        get_text(&language_resource, &language_packs, "dialog.language_indicator"),
-                        TextStyle {
-                            font: bold_font.clone(),
-                            font_size: 24.0,
-                            color: Color::srgba(0.8, 0.8, 0.9, 0.8),
-                        },
-                    ),
-                    LanguageIndicator,
-                    Name::new("language_indicator"),
-                ));
+                TextBuilder::localized_child_with_components(
+                    controls,
+                    "dialog.language_indicator",
+                    TextStylePreset::Custom(24.0, true, Color::srgba(0.8, 0.8, 0.9, 0.8)),
+                    &language_resource,
+                    &language_packs,
+                    &text_styles,
+                    (LanguageIndicator, Name::new("language_indicator")),
+                );
             });
         });
 }
@@ -221,16 +211,27 @@ fn process_stage_progression(
     }
 }
 
-/// จัดการการเปลี่ยนภาษาในโหมด dialog (แยกจาก global)
-pub fn handle_language_toggle_dialog(
+/// Update dialog text fonts เมื่อเปลี่ยนภาษา
+pub fn update_dialog_fonts(
     mut language_events: EventReader<LanguageChangeEvent>,
     language_resource: Res<LanguageResource>,
-    language_packs: Res<Assets<LanguagePack>>,
-    mut language_indicator_query: Query<&mut Text, With<LanguageIndicator>>,
+    text_styles: Res<TextStyleResource>,
+    mut character_name_query: Query<&mut Text, (With<CharacterName>, Without<DialogText>)>,
+    mut dialog_text_query: Query<&mut Text, (With<DialogText>, Without<CharacterName>)>,
 ) {
     for _event in language_events.read() {
-        if let Ok(mut text) = language_indicator_query.get_single_mut() {
-            text.sections[0].value = get_text(&language_resource, &language_packs, "dialog.language_indicator");
+        // Update character name font
+        for mut text in character_name_query.iter_mut() {
+            if !text.sections.is_empty() {
+                text.sections[0].style = TextStylePreset::DialogName.to_style(&text_styles, &language_resource.current_language);
+            }
+        }
+
+        // Update dialog text font
+        for mut text in dialog_text_query.iter_mut() {
+            if !text.sections.is_empty() {
+                text.sections[0].style = TextStylePreset::DialogText.to_style(&text_styles, &language_resource.current_language);
+            }
         }
     }
 }

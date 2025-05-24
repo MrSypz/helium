@@ -3,7 +3,8 @@ use crate::core::resources::*;
 use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle_state_changes, handle_pause_input};
 use crate::core::dialog::{manager::*, typewriter::*, choice::*};
 use crate::core::scene::{background::*, character::*};
-use crate::core::language::{manager::*, types::*, sync::*, fonts::*};
+use crate::core::language::{manager::*, types::*, sync::*};
+use crate::core::text::{styles::*, components::*, builder::*};
 use crate::types::{DialogScene, DialogLoader};
 use crate::ui::{dialog::*, choice::*, main_menu::*, settings::*};
 
@@ -19,7 +20,7 @@ impl Plugin for VNPlugin {
             .init_asset_loader::<DialogLoader>()
             .init_asset_loader::<LanguageLoader>()
 
-            // Resources
+            // Resources - เพิ่ม TextStyleResource
             .init_resource::<VNState>()
             .init_resource::<DialogResource>()
             .init_resource::<DialogHistory>()
@@ -27,20 +28,16 @@ impl Plugin for VNPlugin {
             .init_resource::<DialogManager>()
             .init_resource::<PreviousState>()
             .init_resource::<LanguageResource>()
-            .init_resource::<SettingsResource>() // เพิ่ม SettingsResource
-            .init_resource::<ResolutionDropdownState>() // เพิ่มบรรทัดนี้
+            .init_resource::<SettingsResource>()
+            .init_resource::<ResolutionDropdownState>()
+            .init_resource::<TextStyleResource>() // เพิ่มบรรทัดนี้
 
             // Events
             .add_event::<StageChangeEvent>()
             .add_event::<DialogResetEvent>()
             .add_event::<ChangeStateEvent>()
             .add_event::<LanguageChangeEvent>()
-            .add_event::<SettingsChangeEvent>() // เพิ่มบรรทัดนี้
-
-            // Pre-startup: Setup critical resources ก่อน
-            .add_systems(PreStartup, (
-                setup_fonts,
-            ))
+            .add_event::<SettingsChangeEvent>()
 
             // Startup: Setup camera และ language
             .add_systems(Startup, (
@@ -52,10 +49,11 @@ impl Plugin for VNPlugin {
             .add_systems(Update, (
                 handle_state_changes,
                 handle_pause_input,
-                handle_language_toggle,
                 check_language_loading,
                 sync_language_with_vn_state,
                 sync_vn_state_with_language,
+                update_localized_text,
+                ensure_text_styles_initialized, // เพิ่มระบบ lazy initialization
             ))
 
             // Main Menu
@@ -63,18 +61,18 @@ impl Plugin for VNPlugin {
             .add_systems(Update, (
                 handle_menu_button_hover,
                 handle_menu_buttons,
-                update_main_menu_language,
             ).run_if(in_state(GameState::MainMenu)))
             .add_systems(OnExit(GameState::MainMenu), cleanup_main_menu)
 
-            // Settings - เพิ่ม Settings systems
+            // Settings
             .add_systems(OnEnter(GameState::Settings), setup_settings_ui)
             .add_systems(Update, (
                 handle_settings_button_hover,
                 handle_settings_buttons,
-                update_settings_ui, // เปลี่ยนจาก update_settings_language
+                update_settings_values,
             ).run_if(in_state(GameState::Settings)))
             .add_systems(OnExit(GameState::Settings), cleanup_settings)
+
             // Loading
             .add_systems(OnEnter(GameState::Loading), setup_loading_screen)
             .add_systems(Update, handle_loading_transition.run_if(in_state(GameState::Loading)))
@@ -96,7 +94,7 @@ impl Plugin for VNPlugin {
 
                 // User interactions
                 handle_text_interaction.after(manage_dialog_state),
-                handle_language_toggle_dialog.after(manage_dialog_state),
+                update_dialog_fonts.after(manage_dialog_state),
 
                 // Choice system
                 manage_choice_display.after(manage_dialog_state),
@@ -113,7 +111,7 @@ impl Plugin for VNPlugin {
     }
 }
 
-// สร้าง camera เพียงครั้งเดียวตอนเริ่มต้นเกม
+/// สร้าง camera เพียงครั้งเดียวตอนเริ่มต้นเกม
 fn setup_global_camera(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle::default(),

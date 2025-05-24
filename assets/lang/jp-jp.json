@@ -8,7 +8,7 @@
     "choose_action": "行動を選択してください",
     "game_title": "Helium Visual Novel",
     "game_subtitle": "新しい冒険を始めましょう",
-    "controls_help": "操作: クリックでストーリー進行 | L - 言語変更 | ESC - 一時停止",
+    "controls_help": "操作: クリックでストーリー進行 | ESC - 一時停止 | 設定で言語変更",
     "settings_title": "設定",
     "language_setting": "言語",
     "resolution_setting": "解像度",

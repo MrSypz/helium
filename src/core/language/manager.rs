@@ -27,7 +27,7 @@ impl Default for LanguageResource {
 }
 
 impl LanguageResource {
-    /// เปลี่ยนภาษา
+    /// เปลี่ยนภาษา (เฉพาะผ่าน Settings UI เท่านั้น)
     pub fn change_language(&mut self, language: LanguageCode) -> bool {
         if let Some(pack_handle) = self.packs.get(&language) {
             self.current_language = language;
@@ -38,7 +38,7 @@ impl LanguageResource {
         }
     }
 
-    /// ได้ภาษาถัดไป (สำหรับ cycle)
+    /// ได้ภาษาถัดไป (สำหรับ Settings UI)
     pub fn next_language(&self) -> LanguageCode {
         match self.current_language {
             LanguageCode::Thai => LanguageCode::English,
@@ -136,23 +136,6 @@ pub fn check_language_loading(
         info!("Language System พร้อมใช้งาน");
     }
 }
-
-/// จัดการการเปลี่ยนภาษาด้วย L key
-pub fn handle_language_toggle(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut language_resource: ResMut<LanguageResource>,
-    mut language_events: EventWriter<LanguageChangeEvent>,
-) {
-    if keyboard.just_pressed(KeyCode::KeyL) {
-        let new_language = language_resource.next_language();
-        if language_resource.change_language(new_language.clone()) {
-            info!("เปลี่ยนภาษาเป็น: {:?}", new_language);
-            language_events.send(LanguageChangeEvent { new_language });
-        }
-    }
-}
-
-/// Helper function - ดึงข้อความจาก current language pack
 pub fn get_text(
     language_resource: &LanguageResource,
     language_packs: &Assets<LanguagePack>,
@@ -191,7 +174,7 @@ fn get_text_from_pack(pack: &LanguagePack, path: &str) -> String {
         ["ui", "back"] => pack.ui.back.clone(),
         ["ui", "apply_settings"] => pack.ui.apply_settings.clone(),
         ["ui", "change"] => pack.ui.change.clone(),
-        ["ui", "toggle"] => pack.ui.toggle.clone(), // เพิ่มบรรทัดนี้
+        ["ui", "toggle"] => pack.ui.toggle.clone(),
 
         ["dialog", "choose_action"] => pack.dialog.choose_action.clone(),
         ["dialog", "continue_hint"] => pack.dialog.continue_hint.clone(),

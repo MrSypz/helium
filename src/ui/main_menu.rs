@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 use crate::core::game_state::{GameState, ChangeStateEvent};
-use crate::core::language::manager::{LanguageResource, LanguageChangeEvent, get_text};
+use crate::core::language::manager::LanguageResource;
 use crate::core::language::types::LanguagePack;
-use crate::core::language::fonts::FontResource;
+use crate::core::text::styles::TextStyleResource;
+use crate::core::text::components::TextStylePreset;
+use crate::core::text::builder::TextBuilder;
 
 #[derive(Component)]
 pub struct MainMenuUI;
@@ -16,48 +18,17 @@ pub struct SettingsButton;
 #[derive(Component)]
 pub struct ExitGameButton;
 
-#[derive(Component)]
-pub struct GameTitle;
-
-#[derive(Component)]
-pub struct GameSubtitle;
-
-#[derive(Component)]
-pub struct ControlsHelp;
-
-// Component สำหรับระบุ button text
-#[derive(Component)]
-pub struct StartGameButtonText;
-
-#[derive(Component)]
-pub struct SettingsButtonText;
-
-#[derive(Component)]
-pub struct ExitGameButtonText;
-
 const MENU_BUTTON_COLOR: Color = Color::srgba(0.2, 0.2, 0.3, 0.9);
 const MENU_BUTTON_HOVER: Color = Color::srgba(0.3, 0.3, 0.4, 0.9);
 const MENU_BUTTON_PRESSED: Color = Color::srgba(0.4, 0.4, 0.5, 0.9);
-const MENU_TEXT_COLOR: Color = Color::WHITE;
-const TITLE_COLOR: Color = Color::srgb(1.0, 0.8, 0.2);
 
 pub fn setup_main_menu(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
-    font_resource: Option<Res<FontResource>>,
+    text_styles: Res<TextStyleResource>,
 ) {
-    // ใช้ fallback fonts ถ้า FontResource ยังไม่พร้อม
-    let (regular_font, bold_font) = if let Some(font_res) = font_resource {
-        get_current_fonts(&language_resource, &font_res)
-    } else {
-        // Fallback fonts - ใช้ default Thai fonts
-        let regular = asset_server.load("fonts/thai/NotoSansThai-Regular.ttf");
-        let bold = asset_server.load("fonts/thai/NotoSansThai-Bold.ttf");
-        (regular, bold)
-    };
-
+    // Background
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -73,6 +44,7 @@ pub fn setup_main_menu(
         Name::new("menu_background"),
     ));
 
+    // Main container
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -90,64 +62,63 @@ pub fn setup_main_menu(
         Name::new("menu_container"),
     )).with_children(|parent| {
         // Game Title
-        parent.spawn((
-            TextBundle::from_section(
-                get_text(&language_resource, &language_packs, "ui.game_title"),
-                TextStyle {
-                    font: bold_font.clone(),
-                    font_size: 64.0,
-                    color: TITLE_COLOR,
-                },
-            ).with_style(Style {
-                margin: UiRect::bottom(Val::Px(50.0)),
-                ..default()
-            }),
-            GameTitle,
-            Name::new("game_title"),
-        ));
+        TextBuilder::localized_child(
+            parent,
+            "ui.game_title",
+            TextStylePreset::Custom(64.0, true, Color::srgb(1.0, 0.8, 0.2)),
+            &language_resource,
+            &language_packs,
+            &text_styles,
+        );
 
         // Game Subtitle
         parent.spawn((
-            TextBundle::from_section(
-                get_text(&language_resource, &language_packs, "ui.game_subtitle"),
-                TextStyle {
-                    font: regular_font.clone(),
-                    font_size: 28.0,
-                    color: Color::srgba(0.8, 0.8, 0.9, 0.8),
+            NodeBundle {
+                style: Style {
+                    margin: UiRect::bottom(Val::Px(40.0)),
+                    ..default()
                 },
-            ).with_style(Style {
-                margin: UiRect::bottom(Val::Px(40.0)),
                 ..default()
-            }),
-            GameSubtitle,
-            Name::new("game_subtitle"),
-        ));
+            },
+        )).with_children(|subtitle_container| {
+            TextBuilder::localized_child(
+                subtitle_container,
+                "ui.game_subtitle",
+                TextStylePreset::Subtitle,
+                &language_resource,
+                &language_packs,
+                &text_styles,
+            );
+        });
 
         // Start Game Button
         create_menu_button(
             parent,
-            &regular_font,
-            &get_text(&language_resource, &language_packs, "ui.start_game"),
+            "ui.start_game",
             StartGameButton,
-            StartGameButtonText,
+            &language_resource,
+            &language_packs,
+            &text_styles,
         );
 
         // Settings Button
         create_menu_button(
             parent,
-            &regular_font,
-            &get_text(&language_resource, &language_packs, "ui.settings"),
+            "ui.settings",
             SettingsButton,
-            SettingsButtonText,
+            &language_resource,
+            &language_packs,
+            &text_styles,
         );
 
         // Exit Game Button
         create_menu_button(
             parent,
-            &regular_font,
-            &get_text(&language_resource, &language_packs, "ui.exit_game"),
+            "ui.exit_game",
             ExitGameButton,
-            ExitGameButtonText,
+            &language_resource,
+            &language_packs,
+            &text_styles,
         );
 
         // Controls Help
@@ -162,53 +133,25 @@ pub fn setup_main_menu(
             },
             Name::new("instructions_container"),
         )).with_children(|instructions| {
-            instructions.spawn((
-                TextBundle::from_section(
-                    get_text(&language_resource, &language_packs, "ui.controls_help"),
-                    TextStyle {
-                        font: regular_font.clone(),
-                        font_size: 18.0,
-                        color: Color::srgba(0.7, 0.7, 0.8, 0.7),
-                    },
-                ),
-                ControlsHelp,
-            ));
+            TextBuilder::localized_child(
+                instructions,
+                "ui.controls_help",
+                TextStylePreset::Hint,
+                &language_resource,
+                &language_packs,
+                &text_styles,
+            );
         });
     });
 }
 
-/// ดึง fonts ตามภาษาปัจจุบัน
-pub(crate) fn get_current_fonts(
-    language_resource: &LanguageResource,
-    font_resource: &FontResource,
-) -> (Handle<Font>, Handle<Font>) {
-    let regular_font = font_resource.get_regular_font(&language_resource.current_language);
-    let bold_font = font_resource.get_bold_font(&language_resource.current_language);
-    (regular_font, bold_font)
-}
-
-/// Safe version ที่รองรับ fallback fonts
-fn get_safe_fonts(
-    language_resource: &LanguageResource,
-    font_resource: Option<&FontResource>,
-    asset_server: &AssetServer,
-) -> (Handle<Font>, Handle<Font>) {
-    if let Some(font_res) = font_resource {
-        get_current_fonts(language_resource, font_res)
-    } else {
-        // Fallback fonts
-        let regular = asset_server.load("fonts/NotoSansThai-Regular.ttf");
-        let bold = asset_server.load("fonts/NotoSansThai-Bold.ttf");
-        (regular, bold)
-    }
-}
-
-fn create_menu_button<T: Component, U: Component>(
+fn create_menu_button<T: Component>(
     parent: &mut ChildBuilder,
-    font: &Handle<Font>,
-    text: &str,
+    text_key: &str,
     button_component: T,
-    text_component: U,
+    language_resource: &LanguageResource,
+    language_packs: &Assets<LanguagePack>,
+    text_styles: &TextStyleResource,
 ) {
     parent.spawn((
         ButtonBundle {
@@ -229,91 +172,15 @@ fn create_menu_button<T: Component, U: Component>(
         button_component,
         Name::new("menu_button"),
     )).with_children(|button| {
-        button.spawn((
-            TextBundle::from_section(
-                text,
-                TextStyle {
-                    font: font.clone(),
-                    font_size: 28.0,
-                    color: MENU_TEXT_COLOR,
-                },
-            ),
-            text_component,
-        ));
-    });
-}
-
-/// Update menu text และ fonts เมื่อเปลี่ยนภาษา
-pub fn update_main_menu_language(
-    mut language_events: EventReader<LanguageChangeEvent>,
-    language_resource: Res<LanguageResource>,
-    language_packs: Res<Assets<LanguagePack>>,
-    font_resource: Option<Res<FontResource>>,
-    asset_server: Res<AssetServer>,
-    mut text_query: Query<&mut Text>,
-    title_query: Query<Entity, With<GameTitle>>,
-    subtitle_query: Query<Entity, With<GameSubtitle>>,
-    controls_query: Query<Entity, With<ControlsHelp>>,
-    start_button_text_query: Query<Entity, With<StartGameButtonText>>,
-    settings_button_text_query: Query<Entity, With<SettingsButtonText>>,
-    exit_button_text_query: Query<Entity, With<ExitGameButtonText>>,
-) {
-    for _event in language_events.read() {
-        // ดึง fonts ใหม่ตามภาษาปัจจุบัน (safe version)
-        let (regular_font, bold_font) = get_safe_fonts(
-            &language_resource,
-            font_resource.as_deref(),
-            &asset_server
+        TextBuilder::localized_child(
+            button,
+            text_key,
+            TextStylePreset::Button,
+            language_resource,
+            language_packs,
+            text_styles,
         );
-
-        // Update title
-        if let Ok(entity) = title_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.game_title");
-                text.sections[0].style.font = bold_font.clone();
-            }
-        }
-
-        // Update subtitle
-        if let Ok(entity) = subtitle_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.game_subtitle");
-                text.sections[0].style.font = regular_font.clone();
-            }
-        }
-
-        // Update controls help
-        if let Ok(entity) = controls_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.controls_help");
-                text.sections[0].style.font = regular_font.clone();
-            }
-        }
-
-        // Update start button text
-        if let Ok(entity) = start_button_text_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.start_game");
-                text.sections[0].style.font = regular_font.clone();
-            }
-        }
-
-        // Update settings button text
-        if let Ok(entity) = settings_button_text_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.settings");
-                text.sections[0].style.font = regular_font.clone();
-            }
-        }
-
-        // Update exit button text
-        if let Ok(entity) = exit_button_text_query.get_single() {
-            if let Ok(mut text) = text_query.get_mut(entity) {
-                text.sections[0].value = get_text(&language_resource, &language_packs, "ui.exit_game");
-                text.sections[0].style.font = regular_font.clone();
-            }
-        }
-    }
+    });
 }
 
 pub fn handle_menu_button_hover(
@@ -378,17 +245,10 @@ pub fn cleanup_main_menu(
 
 pub fn setup_loading_screen(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     language_resource: Res<LanguageResource>,
     language_packs: Res<Assets<LanguagePack>>,
-    font_resource: Option<Res<FontResource>>,
+    text_styles: Res<TextStyleResource>,
 ) {
-    let (regular_font, bold_font) = get_safe_fonts(
-        &language_resource,
-        font_resource.as_deref(),
-        &asset_server
-    );
-
     commands.spawn((
         NodeBundle {
             style: Style {
@@ -404,28 +264,33 @@ pub fn setup_loading_screen(
         },
         Name::new("loading_screen"),
     )).with_children(|parent| {
-        parent.spawn(TextBundle::from_section(
-            get_text(&language_resource, &language_packs, "ui.loading"),
-            TextStyle {
-                font: bold_font.clone(),
-                font_size: 48.0,
-                color: Color::WHITE,
-            },
-        ));
+        TextBuilder::localized_child(
+            parent,
+            "ui.loading",
+            TextStylePreset::Custom(48.0, true, Color::WHITE),
+            &language_resource,
+            &language_packs,
+            &text_styles,
+        );
 
         parent.spawn((
-            TextBundle::from_section(
-                get_text(&language_resource, &language_packs, "ui.loading_subtitle"),
-                TextStyle {
-                    font: regular_font,
-                    font_size: 24.0,
-                    color: Color::srgba(0.8, 0.8, 0.8, 0.8),
+            NodeBundle {
+                style: Style {
+                    margin: UiRect::top(Val::Px(20.0)),
+                    ..default()
                 },
-            ).with_style(Style {
-                margin: UiRect::top(Val::Px(20.0)),
                 ..default()
-            }),
-        ));
+            },
+        )).with_children(|subtitle_container| {
+            TextBuilder::localized_child(
+                subtitle_container,
+                "ui.loading_subtitle",
+                TextStylePreset::Subtitle,
+                &language_resource,
+                &language_packs,
+                &text_styles,
+            );
+        });
     });
 }
 
