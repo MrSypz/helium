@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::core::resources::{DialogHistory, DialogResource, VNState};
 use crate::core::dialog::choice::ChoiceState;
 use crate::core::dialog::typewriter::TypewriterText;
+use crate::core::game_state::GameState;
 use crate::core::language::manager::{LanguageResource, LanguageChangeEvent};
 use crate::core::language::types::LanguagePack;
 use crate::core::text::styles::TextStyleResource;
@@ -145,7 +146,13 @@ pub fn handle_text_interaction(
     touch: Res<Touches>,
     dialog_box_query: Query<&Interaction, (With<DialogBox>, Changed<Interaction>)>,
     mut dialog_query: Query<(&mut Text, &mut TypewriterText), With<DialogText>>,
+    current_state: Res<State<GameState>>,
 ) {
+    // ไม่ทำงานเมื่อไม่ได้อยู่ใน InGame state
+    if *current_state.get() != GameState::InGame {
+        return;
+    }
+
     if choice_state.active {
         return;
     }
@@ -231,6 +238,30 @@ pub fn update_dialog_fonts(
         for mut text in dialog_text_query.iter_mut() {
             if !text.sections.is_empty() {
                 text.sections[0].style = TextStylePreset::DialogText.to_style(&text_styles, &language_resource.current_language);
+            }
+        }
+    }
+}
+
+pub fn paused_typewriter_system(
+    time: Res<Time>,
+    mut query: Query<(&mut Text, &mut TypewriterText)>,
+    current_state: Res<State<GameState>>,
+) {
+    if *current_state.get() != GameState::InGame {
+        return;
+    }
+
+    for (mut text, mut typewriter) in query.iter_mut() {
+        if typewriter.char_index < typewriter.full_text.chars().count() {
+            typewriter.timer.tick(time.delta());
+
+            if typewriter.timer.just_finished() {
+                if let Some(next_char) = typewriter.full_text.chars().nth(typewriter.char_index) {
+                    typewriter.current_text.push(next_char);
+                    typewriter.char_index += 1;
+                    text.sections[0].value = typewriter.current_text.clone();
+                }
             }
         }
     }

@@ -189,7 +189,6 @@ impl SettingsResource {
     }
 
     pub fn save_to_file(&self, _path: &str) {
-        // TODO: Implement saving to file
         info!("Settings saved: {}x{}, Fullscreen: {}, Language: {:?}",
               self.resolution.0, self.resolution.1, self.fullscreen, self.language);
     }

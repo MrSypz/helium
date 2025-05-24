@@ -1,12 +1,13 @@
-use bevy::prelude::*;
+use crate::core::dialog::{choice::*, manager::*};
+use crate::core::game_state::{handle_pause_input, handle_state_changes, ChangeStateEvent, GameState, PreviousState};
+use crate::core::language::{manager::*, sync::*, types::*};
 use crate::core::resources::*;
-use crate::core::game_state::{GameState, ChangeStateEvent, PreviousState, handle_state_changes, handle_pause_input};
-use crate::core::dialog::{manager::*, typewriter::*, choice::*};
 use crate::core::scene::{background::*, character::*};
-use crate::core::language::{manager::*, types::*, sync::*};
-use crate::core::text::{styles::*, components::*, builder::*};
-use crate::types::{DialogScene, DialogLoader};
-use crate::ui::{dialog::*, choice::*, main_menu::*, settings::*};
+use crate::core::text::{builder::*, styles::*};
+use crate::types::{DialogLoader, DialogScene};
+use crate::ui::choice::{highlight_choice_button, manage_choice_display};
+use crate::ui::{dialog::*, main_menu::*, pause::*, settings::*};
+use bevy::prelude::*;
 
 pub struct VNPlugin;
 
@@ -20,7 +21,7 @@ impl Plugin for VNPlugin {
             .init_asset_loader::<DialogLoader>()
             .init_asset_loader::<LanguageLoader>()
 
-            // Resources - เพิ่ม TextStyleResource
+            // Resources
             .init_resource::<VNState>()
             .init_resource::<DialogResource>()
             .init_resource::<DialogHistory>()
@@ -30,7 +31,7 @@ impl Plugin for VNPlugin {
             .init_resource::<LanguageResource>()
             .init_resource::<SettingsResource>()
             .init_resource::<ResolutionDropdownState>()
-            .init_resource::<TextStyleResource>() // เพิ่มบรรทัดนี้
+            .init_resource::<TextStyleResource>()
 
             // Events
             .add_event::<StageChangeEvent>()
@@ -39,7 +40,7 @@ impl Plugin for VNPlugin {
             .add_event::<LanguageChangeEvent>()
             .add_event::<SettingsChangeEvent>()
 
-            // Startup: Setup camera และ language
+            // Startup systems
             .add_systems(Startup, (
                 setup_global_camera,
                 load_language_packs,
@@ -53,7 +54,9 @@ impl Plugin for VNPlugin {
                 sync_language_with_vn_state,
                 sync_vn_state_with_language,
                 update_localized_text,
-                ensure_text_styles_initialized, // เพิ่มระบบ lazy initialization
+                ensure_text_styles_initialized,
+                // เพิ่ม conditional cleanup
+                conditional_cleanup_game_scene,
             ))
 
             // Main Menu
@@ -73,16 +76,24 @@ impl Plugin for VNPlugin {
             ).run_if(in_state(GameState::Settings)))
             .add_systems(OnExit(GameState::Settings), cleanup_settings)
 
+            // Pause - render ทับ dialog โดยไม่ cleanup
+            .add_systems(OnEnter(GameState::Paused), setup_pause_ui)
+            .add_systems(Update, (
+                handle_pause_button_hover,
+                handle_pause_buttons,
+            ).run_if(in_state(GameState::Paused)))
+            .add_systems(OnExit(GameState::Paused), cleanup_pause_ui)
+
             // Loading
             .add_systems(OnEnter(GameState::Loading), setup_loading_screen)
             .add_systems(Update, handle_loading_transition.run_if(in_state(GameState::Loading)))
             .add_systems(OnExit(GameState::Loading), cleanup_loading_screen)
 
-            // In-Game
+            // In-Game - ลบ OnExit cleanup ออก
             .add_systems(OnEnter(GameState::InGame), (
-                setup_dialog_ui,
-                load_dialogs,
-                setup_scene_background,
+                setup_dialog_ui_if_needed,
+                load_dialogs_if_needed,
+                setup_scene_background_if_needed,
             ))
             .add_systems(Update, (
                 // Core dialog management
@@ -90,7 +101,7 @@ impl Plugin for VNPlugin {
                     .before(handle_text_interaction)
                     .before(manage_choice_display),
 
-                typewriter_system.after(manage_dialog_state),
+                crate::ui::dialog::paused_typewriter_system.after(manage_dialog_state),
 
                 // User interactions
                 handle_text_interaction.after(manage_dialog_state),
@@ -106,12 +117,11 @@ impl Plugin for VNPlugin {
                 update_characters.after(setup_characters),
                 update_background.after(manage_dialog_state),
                 check_character_assets,
-            ).run_if(in_state(GameState::InGame)))
-            .add_systems(OnExit(GameState::InGame), cleanup_game_scene);
+            ).run_if(in_state(GameState::InGame)));
+        // ไม่มี OnExit(GameState::InGame) cleanup
     }
 }
 
-/// สร้าง camera เพียงครั้งเดียวตอนเริ่มต้นเกม
 fn setup_global_camera(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle::default(),
@@ -130,13 +140,62 @@ fn cleanup_loading_screen(
     }
 }
 
-fn cleanup_game_scene(
+// ระบบ cleanup ที่ตรวจสอบว่าควร cleanup หรือไม่
+fn conditional_cleanup_game_scene(
     mut commands: Commands,
+    mut change_events: EventReader<ChangeStateEvent>,
+    current_state: Res<State<GameState>>,
     game_entities: Query<Entity, (Without<Camera>, Without<Window>)>,
 ) {
-    for entity in game_entities.iter() {
-        if let Some(entity_commands) = commands.get_entity(entity) {
-            entity_commands.despawn_recursive();
+    for event in change_events.read() {
+        // cleanup เฉพาะเมื่อออกจาก InGame ไปยัง state ที่ไม่ใช่ Paused
+        if *current_state.get() == GameState::InGame &&
+            event.new_state != GameState::Paused {
+            // Cleanup game scene
+            for entity in game_entities.iter() {
+                if let Some(entity_commands) = commands.get_entity(entity) {
+                    entity_commands.despawn_recursive();
+                }
+            }
+            info!("Cleaned up game scene when transitioning from InGame to {:?}", event.new_state);
         }
+    }
+}
+
+// Setup functions ที่ตรวจสอบว่ามีอยู่แล้วหรือไม่
+fn setup_dialog_ui_if_needed(
+    commands: Commands,
+    language_resource: Res<LanguageResource>,
+    language_packs: Res<Assets<LanguagePack>>,
+    text_styles: Res<TextStyleResource>,
+    existing_dialog: Query<Entity, With<DialogBox>>,
+) {
+    // Setup เฉพาะเมื่อยังไม่มี dialog UI
+    if existing_dialog.is_empty() {
+        setup_dialog_ui(commands, language_resource, language_packs, text_styles);
+    }
+}
+
+fn load_dialogs_if_needed(
+    asset_server: Res<AssetServer>,
+    dialog_resource: ResMut<DialogResource>,
+    vn_state: ResMut<VNState>,
+) {
+    // Load เฉพาะเมื่อยังไม่ได้ load
+    if dialog_resource.scenes.is_empty() {
+        load_dialogs(asset_server, dialog_resource, vn_state);
+    }
+}
+
+fn setup_scene_background_if_needed(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    dialog_scenes: Res<Assets<DialogScene>>,
+    state: Res<VNState>,
+    existing_bg: Query<Entity, With<crate::core::scene::background::Background>>,
+) {
+    // Setup เฉพาะเมื่อยังไม่มี background
+    if existing_bg.is_empty() {
+        setup_scene_background(commands, asset_server, dialog_scenes, state);
     }
 }

@@ -18,7 +18,11 @@
     "back": "戻る",
     "apply_settings": "適用",
     "change": "変更",
-    "toggle": "切り替え"
+    "toggle": "切り替え",
+    "paused_title": "一時停止",
+    "resume_game": "再開",
+    "main_menu": "メインメニュー",
+    "pause_controls_hint": "ESCで再開、またはボタンをクリックして行動を選択"
   },
   "dialog": {
     "choose_action": "行動を選択してください",

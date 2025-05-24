@@ -176,6 +176,12 @@ fn get_text_from_pack(pack: &LanguagePack, path: &str) -> String {
         ["ui", "change"] => pack.ui.change.clone(),
         ["ui", "toggle"] => pack.ui.toggle.clone(),
 
+        // สำหรับ Pause
+        ["ui", "paused_title"] => pack.ui.paused_title.clone(),
+        ["ui", "resume_game"] => pack.ui.resume_game.clone(),
+        ["ui", "main_menu"] => pack.ui.main_menu.clone(),
+        ["ui", "pause_controls_hint"] => pack.ui.pause_controls_hint.clone(),
+
         ["dialog", "choose_action"] => pack.dialog.choose_action.clone(),
         ["dialog", "continue_hint"] => pack.dialog.continue_hint.clone(),
         ["dialog", "language_indicator"] => pack.dialog.language_indicator.clone(),

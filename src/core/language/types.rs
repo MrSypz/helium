@@ -33,7 +33,11 @@ pub struct UiTexts {
     pub back: String,
     pub apply_settings: String,
     pub change: String,
-    pub toggle: String, // เพิ่มบรรทัดนี้
+    pub toggle: String,
+    pub paused_title: String,
+    pub resume_game: String,
+    pub main_menu: String,
+    pub pause_controls_hint: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

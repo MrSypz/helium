@@ -32,7 +32,8 @@ pub fn handle_state_changes(
     current_state: Res<State<GameState>>,
 ) {
     for event in events.read() {
-        if event.new_state == GameState::Paused {
+        // เก็บ previous state เฉพาะเมื่อไป Paused หรือ Settings
+        if event.new_state == GameState::Paused || event.new_state == GameState::Settings {
             previous_state.state = Some(current_state.get().clone());
         }
         next_state.set(event.new_state.clone());
@@ -53,6 +54,13 @@ pub fn handle_pause_input(
                 });
             }
             GameState::Paused => {
+                // กลับไป InGame เสมอ (ไม่ใช้ previous_state)
+                change_events.send(ChangeStateEvent {
+                    new_state: GameState::InGame,
+                });
+            }
+            GameState::Settings => {
+                // กลับไป state ก่อนหน้า หรือ InGame ถ้าไม่มี
                 if let Some(prev_state) = &previous_state.state {
                     change_events.send(ChangeStateEvent {
                         new_state: prev_state.clone(),

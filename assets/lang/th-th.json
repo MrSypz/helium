@@ -18,7 +18,11 @@
     "back": "กลับ",
     "apply_settings": "นำไปใช้",
     "change": "เปลี่ยน",
-    "toggle": "สลับ"
+    "toggle": "สลับ",
+    "paused_title": "หยุดชั่วคราว",
+    "resume_game": "เล่นต่อ",
+    "main_menu": "หน้าหลัก",
+    "pause_controls_hint": "กด ESC เพื่อเล่นต่อ หรือ คลิกปุ่มเพื่อเลือกการกระทำ"
   },
   "dialog": {
     "choose_action": "เลือกการกระทำของคุณ",
