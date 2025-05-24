@@ -44,21 +44,6 @@ pub fn detect_interaction(
     None
 }
 
-pub fn detect_key_press(
-    keyboard: &Res<ButtonInput<KeyCode>>,
-    keys: &[KeyCode],
-) -> Option<InputEvent> {
-    for &key in keys {
-        if keyboard.just_pressed(key) {
-            return Some(InputEvent {
-                pressed: true,
-                source: InputSource::KeyPress(key),
-            });
-        }
-    }
-    None
-}
-
 pub fn is_dialog_text_finished(typewriter: &TypewriterText) -> bool {
     typewriter.char_index >= typewriter.full_text.chars().count()
 }
